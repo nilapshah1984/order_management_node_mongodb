@@ -1,0 +1,156 @@
+/* Layout */
+.applayout {
+    display: grid;
+    grid-template-columns: 25rem 1fr;
+    height: 100vh;
+  }
+  
+  @media (max-width: 768px) {
+    .applayout {
+      max-width: 100vh;
+    }
+  }
+
+  .styelApply { 
+    display: grid;
+    grid-template-columns: 30rem 01fr;
+    height: 100vh;
+  }
+    @media (max-width: 768px) {
+      .styelApply {
+      max-width: 100vh;
+      }
+    }
+
+  .main {
+    background-color: white;
+    padding: 3.8rem 3.4rem 6.8rem;
+
+  }
+  
+
+  .Container-aaplayout {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3.2rem;
+  }
+  @media (max-width: 768px) {
+    .Container-aaplayout {
+      max-width: 100%;
+    }
+  }
+  
+
+  /* Sidebar */
+  .sidebar {
+    width: 350px;
+    background-color: #124e88;
+    padding: 3.2rem 3rem;
+    border-right: 1px solid lightgray;
+    grid-row: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 3.2rem;
+  
+  }
+  
+  /* MainPage Navigation */
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+
+  .nav-link-background {
+    /* background-color: #124e88; */
+    
+  }
+  
+  .nav-link {
+    width: 250px;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    color: darkgray;
+    font-size: 2rem;
+    font-weight: 800;
+    padding: 1.2rem 0.8rem;
+    transition: all 0.3s;  
+    background-color: #124e88;
+    /* border-radius: 25px 0 0 25px; */
+    
+  }
+  
+
+  
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--color-grey-600);
+    background-color: white;
+    border-radius: 25px 0 0 25px;
+  }
+
+
+  .nav-link svg {
+    width: 2.4rem;
+    height: 2.4rem;
+    color: var(--color-grey-400);
+    transition: all 0.3s;
+  }
+  
+  .nav-link:hover svg,
+  .nav-link.active svg {
+    color: var(--color-brand-600);
+  }
+  
+  /* Home Component */
+  .home-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+  }
+  
+  .login-form-container {
+    display: flex;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .login-img {
+    width: 100%;
+    height: 80vh;
+  }
+  
+  .form {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .input-groups input {
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .icon {
+    cursor: pointer;
+    color: darkgray;
+  }
+  
+  .switch {
+    float: right;
+    text-decoration: none;
+  }
+  
+  .button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+  }
+
+  
+  

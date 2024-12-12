@@ -1,0 +1,419 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+.main-container {
+  width: 1525px;
+  padding: 25px;
+  background-color: #f2f2f2; 
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(7, 2, 1, 0.3);
+}
+
+
+.StyledDiv {
+  display: flex;
+  justify-content: space-between; 
+  margin: 5px 0px 5px 0px;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+.ButtonContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; 
+  margin: 3rem 0 2rem 0;
+}
+
+
+
+.Dropdown-item {
+  gap: inherit;
+  display: flex;
+}
+
+.StyledIn {
+  width: 150px; 
+  height: 40px;
+  padding: 5px;
+  /*  border: 1px lightgray solid; */
+  margin: 0px 10px;
+  border: none;
+}
+
+
+.label {
+  margin: 0 10px;
+  border: none;
+}
+
+.StyledButton {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fffcfc;
+  background-color: #007bff;
+  /* height: 38px; */
+  padding:  10px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition:  0.3s ease;
+  margin-left: 10px; 
+  
+}
+
+.SearchIcon {
+  margin-right: 5px;
+  font-size: 22px;
+}
+
+.Add {
+  margin-right: 5px;
+  font-size: 20px;
+}
+
+.StyledButton:hover {
+  background-color: rgb(8, 65, 83);
+}
+
+.list-name {
+  margin: 15px 0;
+  font-size: 22px;
+}
+
+
+h3 {
+  font-size: 20px;
+  padding-bottom: 15px;
+
+}
+
+
+/* Table Styles */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto; 
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #f2f2f2;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+.shadow {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-secondary th {
+  background-color: #e2e3e5;
+  color: #343a40;
+  padding: 8px 0px 9px 15px;
+  text-align: left;
+  font-weight: bold;
+  font-size: 18px;  
+}
+
+.table td {
+  padding:  8px 0px 8px 15px;
+  vertical-align: middle;
+  font-size: 18px;
+}
+
+
+.btns1 {
+  border: none;
+  outline: none;
+  color: #007bff;
+  background: none;
+  cursor: pointer;
+  padding-right: 30px;
+  transition: transform 0.2s ease;
+}
+
+.btns1:hover {
+  color: rgb(41, 10, 244);
+  transform: scale(1.5); 
+}
+
+
+.btns2 {
+  border: none;
+  outline: none;
+  color: #007bff;
+  background: none;
+  cursor: pointer;
+  margin-right: 15px;
+  transition: transform 0.2s ease;
+}
+
+.btns2:hover {
+  color: rgb(244, 10, 10)!important;
+  transform: scale(1.5); 
+}
+
+
+.custom-edit-tooltip {
+  background-color: rgb(41, 10, 244) !important; 
+  color: white !important; 
+  border: none;
+  border-radius: 10%;
+}
+
+
+.ant-tooltip-inner {
+  background-color: transparent;
+  border-radius: 10%;
+  border: none
+}
+
+
+
+
+
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .StyledIn {
+    width: 100%; 
+    margin-bottom: 10px;
+  }
+  
+  .ButtonContainer {
+    flex-direction: column; 
+    align-items: flex-start; 
+  }
+
+  .StyledButton {
+    width: 100%; 
+    margin-top: 10px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* Add CustomerPO  */
+.form-heading {
+  text-align: center; 
+  font-size: 28px; 
+  margin: auto; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  height: 100%; 
+}
+
+
+.customer-form {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+
+.customer-form__input {
+  width: 100%;
+  font-size: 20px;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin-bottom: 8px;
+}
+
+.customer-form__input22 {
+  width: 100%;
+  font-size: 20px;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  border: none;
+}
+
+.customer-form__label {
+  margin-bottom: 8px;
+  font-size: 20px;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+}
+
+.ButtonContainer1 {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; 
+}
+
+
+.searchDropdown {
+  display: flex;
+}
+
+
+.SearchbelDropdown {
+  width: 200px;
+  margin: 0px 10px;
+}
+
+.StyledButton1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fffcfc;
+  background-color: #007bff;
+  height: 38px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.StyledButton11 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fffcfc;
+  background-color: Red;
+  height: 38px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.customer-form__input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.resetForm {
+  justify-content: space-between;
+  text-align: inherit;
+}
+
+
+
+/* DASHBOARD */
+
+.table-Dashboard {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.tableCPR {
+  width: 450px;
+}
+
+.ButtonContainerDB {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; 
+  /* padding: 10px; */
+  margin: 5rem 0 2rem 0;
+}
+
+
+.searchitem {
+  border: 1px lightgray solid;
+  width: 18vh;
+  height: 5vh;
+  padding: 5px;
+  font-size: 20px;
+}
+
+
+
+/* Item  Price */
+
+.form-divide {
+  justify-content: space-between;
+}
+
+.item-form__input {
+  width: 70%;
+  font-size: 20px;
+  padding: 20px;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.item-form__label {
+  margin-bottom: 10px;
+  padding-top: 15px;
+  font-size: 20px;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-value {
+  display: flex;
+  justify-content: space-between;
+}
+
+.item-namediv {
+   display: flex;
+   /* justify-content: space-between; */
+}
+
+.itemname {
+  padding: 20px 0 0 42px;
+  font-size: 20px;
+}
+
+.itempricename {
+  margin: 30px 0 15px 0;
+}
+
+.button-group {
+  display: flex;
+  
+}
+
+
+/* itemStockDetails */
+
+.itemStockDetails {
+  max-width: 800px ;
+  height: auto;
+  
+}
+
+.ButtonContainerstockdetails {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; 
+  /* margin: 1rem 0 1rem 0; */
+}
+
+
+
+
