@@ -21,9 +21,8 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* padding: 1.5rem 0.5rem; */
-  background-color: #124e88;
-
+  /* background-color: #124e88; */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 
@@ -34,17 +33,17 @@ a {
   background-color: white;
   border-radius: 10px;
   padding: 8px;
-  margin-left: 50px;
-  /* margin-right: -10px; */
+  margin-left: 30px;
   font-size: 20px;
-  color: #333;
+  color: #6e65c6;
 }
 
 .User {
   margin: 0px 8px;
   font-size: 20px;
-  color: blue;
+  color: #6e65c6;
   cursor: pointer;
+
 }
 
 
@@ -52,6 +51,7 @@ a {
 .navbar .span img {
   margin-bottom: 0.2rem;
   padding: 0 5px;
+  color: #6e65c6;
 }
 
 /* Logout Section */
@@ -65,13 +65,13 @@ a {
   background-color: white;
   border-radius: 10px;
   font-size: 1.9rem;
-  color: #333;
+  color: #6e65c6;
 }
 
 .logout .logout-icon {
   font-size: 4rem;
   transform: rotate(180deg);
-  margin-right: -22px;
+  margin-right: -40px;
   color: white;
   cursor: pointer;
   transition: color 0.3s;

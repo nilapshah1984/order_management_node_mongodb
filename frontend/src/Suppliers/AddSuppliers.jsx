@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import axios from "axios";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -6,7 +5,7 @@ import { Select } from "antd";
 import "../StyleCSS/Customer.css";
 const { Option } = Select;
 
-function AddSuppliers({ editingSuppliers, setVisible }) {
+function AddSuppliers({editingSuppliers, setVisible, loadSuppliers, setEditingSuppliers, handleClose}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [area, setArea] = useState("");
@@ -15,6 +14,7 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
   const [city, setCity] = useState("");
   const [gstn, setGstn] = useState("");
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false); //new
 
   useEffect(() => {
     if (editingSuppliers) {
@@ -32,70 +32,65 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
   }, [editingSuppliers]);
 
   const resetForm = () => {
-    {
-      setName("");
-      setEmail("");
-      setArea("");
-      setPhone("");
-      setAddress("");
-      setCity("");
-      setGstn("");
-      setStatus("");
-    }
+    setName("");
+    setEmail("");
+    setArea("");
+    setPhone("");
+    setAddress("");
+    setCity("");
+    setGstn("");
+    setStatus("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); 
+
     try {
-      const customerData = new FormData();
-      customerData.append("name", name);
-      customerData.append("email", email);
-      customerData.append("phone", phone);
-      customerData.append("area", area);
-      customerData.append("address", address);
-      customerData.append("city", city);
-      customerData.append("gstn", gstn);
-      customerData.append("status", status);
+        const supplierData = new FormData();
+        supplierData.append("name", name);
+        supplierData.append("email", email);
+        supplierData.append("phone", phone);
+        supplierData.append("area", area);
+        supplierData.append("address", address);
+        supplierData.append("city", city);
+        supplierData.append("gstn", gstn);
+        supplierData.append("status", status);
 
-      let res;
-      if (editingSuppliers && editingSuppliers._id) {
-        res = await axios.put(
-          `http://localhost:8000/api/suppliers/${editingSuppliers._id}`,
-          customerData
-        );
-      } else {
-        res = await axios.post(
-          "http://localhost:8000/api/supplier",
-          customerData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-      }
-
-      const { data } = res;
-      if (data?.error) {
-        toast.error(data.error);
-      } else {
-        toast.success(
-          editingSuppliers && editingSuppliers._id
-            ? `${data.name} is updated`
-            : `${data.name} is created`,
-          setVisible(false)
-        );
-      }
+        let data;
+        if (editingSuppliers) {
+            data = await axios.put(
+                `http://localhost:8000
+/api/suppliers/${editingSuppliers._id}`,
+                supplierData
+            );
+        } else {
+            data = await axios.post(
+                "http://localhost:8000/api/supplier",
+                supplierData
+            );
+        }
+        if (data?.error) {
+            toast.error(data.error);
+        } else {
+            setTimeout(() => {
+                toast.success(`"${data.name}" is ${editingSuppliers ? "updated" : "added"}`);
+                loadSuppliers(1);
+                setVisible(false);
+                setEditingSuppliers(null);
+                handleClose();
+            }, 5000); 
+        }
     } catch (err) {
-      if (err.response.data && err.response.data.error) {
-        toast.error(err.response.data.error);
-      }
-      console.log("Error saving customer:", err);
-      toast.error("Error saving customer");
-      setVisible(true);
+        console.log(err);
+    } finally {
+        setLoading(false);
     }
-  };
+};
 
   const handleCancel = () => {
     resetForm();
+    setEditingSuppliers(null);
   };
 
   return (
@@ -108,29 +103,35 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
         </h3>
         <div className="customer-form">
           <label className="customer-form__label">
-            Name:
+            <span>
+              Name: <span className="required-field">*</span>
+            </span>
             <input
               type="text"
               name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="customer-form__input"
-              required 
+              required
             />
           </label>
           <label className="customer-form__label">
-            Email:
+            <span>
+              Email: <span className="required-field">*</span>
+            </span>
             <input
               type="email"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="customer-form__input"
-              required 
+              required
             />
           </label>
           <label className="customer-form__label">
-            Phone:
+            <span>
+              Phone: <span className="required-field">*</span>
+            </span>
             <input
               type="tel"
               name="phone"
@@ -138,7 +139,7 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
               onChange={(e) => setPhone(e.target.value)}
               className="customer-form__input"
               pattern="[0-9]{10}"
-              required 
+              required
             />
           </label>
           <label className="customer-form__label">
@@ -152,7 +153,9 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
             />
           </label>
           <label className="customer-form__label">
-            Area:
+            <span>
+              Area: <span className="required-field">*</span>
+            </span>
             <input
               type="text"
               name="area"
@@ -172,7 +175,9 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
             />
           </label>
           <label className="customer-form__label">
-            Status:
+            <span>
+              Status: <span className="required-field">*</span>
+            </span>
             <Select
               variant="false"
               className="form-select mb-3"
@@ -181,12 +186,15 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
               value={status}
               onChange={(value) => setStatus(value)}
             >
-              <Option value="active">Actvie</Option>
-              <Option value="inactive">Inactive</Option>
+              <Option value="" disabled>Select Status</Option>
+              <Option value="Active">Actvie</Option>
+              <Option value="Inactive">Inactive</Option>
             </Select>
           </label>
           <label className="customer-form__label">
-            GSTN:
+            <span>
+              GSTN: <span className="required-field">*</span>
+            </span>
             <input
               type="text"
               name="gstn"
@@ -202,20 +210,30 @@ function AddSuppliers({ editingSuppliers, setVisible }) {
         </div>
         <div className="ButtonContainer1">
           <button type="submit" className="StyledButton1">
-            Save
+            {loading  ? 
+              editingSuppliers ? "Updating..." : "Saving..." : 
+              editingSuppliers ? "Update" : "Add"
+            }
           </button>
           <button
             type="button"
             className="StyledButton11"
-            onClick={handleCancel} 
+            onClick={() => {
+              handleClose();
+              resetForm();
+            }}
           >
-            Clear
+            Cancel
           </button>
         </div>
       </form>
+      {loading && (
+        <div className="processing-modal">
+          <img className="ProcessingIMG" src="./ProcessingGig.gif"></img>
+        </div>
+      )}
     </div>
   );
 }
 
 export default AddSuppliers;
-

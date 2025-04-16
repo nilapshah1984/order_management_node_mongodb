@@ -1,112 +1,149 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import moment from "moment";
 import "../StyleCSS/Customer.css";
 
-const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, purchaseEditing  }) => {
-  const [items, setItems] = useState([]);
+const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, purchaseEditing, onSuccess, customerPOs, associatedCPOs }) => {
+  const [items, setItems] = useState([]); 
+  const [filteredItems, setFilteredItems] = useState([]); 
   const [item, setItem] = useState("");
-  const [availableQTY, SetAvailableQTY] = useState(availableQty);
+  const [availableQTY, setAvailableQTY] = useState(availableQty);
   const [altqty, setAltqty] = useState("");
-  const [reaminQTY, SetRemainQTY] = useState();
+  const [remainingQTY, setRemainingQTY] = useState(availableQty); 
   const [unitCost, setUnitCost] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
-  const existingStockValue = 9; 
 
   useEffect(() => {
-    loadItems();
+    loadSalesitem(); 
   }, []);
 
   useEffect(() => {
+    // console.log("Current PO Details on Open:", purchaseEditing); 
     if (editpo) {
+      const cpoDetails = customerPOs.find(cpo => cpo.customerpo === purchaseEditing.customerpo);
+      if (cpoDetails) {
+        // console.log("CPO Details:", cpoDetails);
+      } else {
+        console.log("CPO not found for customerpo:", purchaseEditing.customerpo);
+      }
+
       setItem(editpo.item);
-      SetAvailableQTY(editpo.availableQTY)
+      setAvailableQTY(editpo.availableQTY);
       setAltqty(editpo.altqty);
-      SetRemainQTY(editpo.reaminQTY)
+      setRemainingQTY(editpo.remainingQTY); 
       setUnitCost(editpo.unitCost);
       setPurchasePrice(editpo.purchasePrice);
       setInvoiceNo(editpo.invoiceNo);
       setInvoiceDate(editpo.invoiceDate);
     } else {
-      setItem("");
-      SetAvailableQTY(availableQty)
-      setAltqty("");
-      setUnitCost("");
-      setPurchasePrice("");
-      setInvoiceNo("");
-      setInvoiceDate("");
+      resetForm();
     }
-  }, [editpo, availableQty]);
+  }, [editpo, availableQty, purchaseEditing]);
 
   useEffect(() => {
-    if (altqty && unitCost) {
-      const calculatedPrice = parseFloat(altqty) * parseFloat(unitCost);
-      setPurchasePrice(calculatedPrice.toFixed(2));
-    } else {
-      setPurchasePrice("");
-    }
-  }, [altqty, unitCost]);
 
+    const associatedItemIds = associatedCPOs.map(cpo => cpo._id); 
+    const filtered = items.filter(item => associatedItemIds.includes(item.customerPo)); 
+    setFilteredItems(filtered);
+    // console.log("Filtered Items based on Associated CPOs:", filtered);
+  }, [items, associatedCPOs]);
 
-  useEffect(() => {
-    if(altqty !== "") {
-      const remainingQty = availableQTY - parseInt(altqty);
-      SetRemainQTY(remainingQty >= 0 ? remainingQty : 0); 
-    } else{
-      SetRemainQTY(availableQTY);
-    }
-  },[altqty, availableQTY]);
-
-
-  const loadItems = async () => {
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/items");
-      if (Array.isArray(data.items)) {
-        setItems(data.items);
-      } else {
-        setItems([]);
-      }
-    } catch (err) {
-      console.error("Error loading items:", err);
-      toast.error("Error loading items");
-    }
+  const resetForm = () => {
+    setItem("");
+    setAvailableQTY(availableQty);
+    setAltqty("");
+    setUnitCost("");
+    setPurchasePrice("");
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setRemainingQTY(availableQty); 
   };
 
-
+  const loadSalesitem = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/itempos");      
+      console.log("SalesItem for PO:", data); 
+      
+      if (Array.isArray(data)) {
+        const extractedItems = data.map(item => ({
+          _id: item._id,
+          item: item.item.item,
+          qty: item.qty,
+          customerPo: item.customerPo 
+        }));
+        setItems(extractedItems); 
+        console.log("Items loaded into state:", extractedItems); 
+      } else {
+        setItems([]);
+        console.log("No items found in the response."); 
+      }
+    } catch (err) {
+      console.error("Error loading sales items:", err);
+      // toast.error("Error loading sales items");
+    }
+  };
 
   const handleItemChange = (e) => {
     const selectedItemId = e.target.value;
     setItem(selectedItemId);
-  
-    const selectedItem = items.find((i) => i._id === selectedItemId);
+
+    const selectedItem = filteredItems.find((i) => i._id === selectedItemId); 
     if (selectedItem) {
-      const stock = selectedItem.stock ;
-      SetAvailableQTY(stock);
-      // setAltqty(stock);
-      console.log(`Selected item: ${selectedItem.item}, Stock: ${stock}`);
+      const stock = selectedItem.qty;
+      setAvailableQTY(stock);
+      setRemainingQTY(stock); 
+      // console.log(`Selected item: ${selectedItem.item}, Stock: ${stock}`);
     } else {
       console.log("Selected item not found");
     }
   };
 
- 
+  useEffect(() => {
+    if (altqty !== "") {
+      const allocatedQty = parseInt(altqty);
+      const remainingQty = availableQTY - allocatedQty;
+      setRemainingQTY(remainingQty >= 0 ? remainingQty : 0); 
+    } else {
+      setRemainingQTY(availableQTY); 
+    }
+  }, [altqty, availableQTY]);
+
+  useEffect(() => {
+    if (altqty && unitCost) {
+      const calculatedPrice = parseFloat(altqty) * parseFloat(unitCost);
+      setPurchasePrice(calculatedPrice.toFixed(2)); 
+    } else {
+      setPurchasePrice(""); 
+    }
+  }, [altqty, unitCost]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log("Current purchaseEditing:", purchaseEditing);
+      // console.log("Current purchaseEditing:", purchaseEditing);
 
       if (!item || !altqty || !unitCost || !invoiceNo || !invoiceDate) {
         toast.error("Please fill all required fields.");
         return;
       }
-    
+
       if (!purchaseEditing || !purchaseEditing._id) {
         toast.error("Purchase order is not selected or invalid.");
         return;
       }
+
+      console.log("Current PO Details on Submit:", {
+        customerId,
+        purchaseOrderId: purchaseEditing._id,
+        item,
+        altqty,
+        unitCost,
+        purchasePrice,
+        invoiceNo,
+        invoiceDate,
+      });
 
       const formData = new FormData();
       formData.append("customerId", customerId);
@@ -117,24 +154,24 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
       formData.append("purchasePrice", purchasePrice);
       formData.append("invoiceNo", invoiceNo);
       formData.append("invoiceDate", invoiceDate);
-  
+
+      console.log("Adding item with Purchase Order ID:", purchaseEditing._id);
+
       const apiUrl = editpo
         ? `http://localhost:8000/api/itemppos/${editpo._id}`
         : "http://localhost:8000/api/itemppo";
-  
       const method = editpo ? "put" : "post";
-  
+
       const { data } = await axios[method](apiUrl, formData);
-  
+
       if (data?.error) {
         toast.error(data.error);
       } else {
         toast.success(
-          `${data.item || "Item"} details ${
-            editpo ? "updated" : "added"
-          } successfully`
+          `${data.item || "Purchase Item"} details ${editpo ? "updated" : "added"} successfully`
         );
         setShowAddOrEdit(false);
+        onSuccess();
       }
     } catch (err) {
       console.error("Save Error:", err.response || err);
@@ -144,10 +181,10 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
 
   return (
     <form onSubmit={handleSubmit} className="salesorder-form">
-      <h3 className="salesorder-form-heading">Add / Edit Item</h3>
+      <h2 className="salesorder-form-heading">{editpo ? "Edit Purchase Item" : "Add Purchase Item"}</h2>
       <div className="customer-form">
         <label htmlFor="item" className="customer-form__label">
-          Item Name:
+          <span>Item Name: <span className="required-field">*</span></span>
         </label>
         <select
           id="item"
@@ -156,15 +193,15 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           className="customer-form__input"
         >
           <option value="">Select an item</option>
-          {items.map((item) => (
+          {filteredItems.map((item) => ( 
             <option key={item._id} value={item._id}>
-              {item.item}
+              {item.item} 
             </option>
           ))}
         </select>
 
-        <label htmlFor="qty" className="customer-form__label">
-          Availble Qty:
+        <label htmlFor="availableQty" className="customer-form__label">
+          Available Qty:
         </label>
         <input 
           type="number" 
@@ -174,8 +211,8 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           readOnly
         />
 
-        <label htmlFor="qty" className="customer-form__label">
-          Allocated Qty:
+        <label htmlFor="qty" className="customer-form__label">          
+          <span>Allocated Qty: <span className="required-field">*</span></span>
         </label>
         <input
           type="number"
@@ -185,19 +222,19 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           className="customer-form__input"          
         />
 
-        <label htmlFor="qty" className="customer-form__label">
+        <label htmlFor="remainingQty" className="customer-form__label">
           Remaining Qty:
         </label>
         <input 
           type="number" 
           id="remainingQty" 
-          value={reaminQTY || 0} 
+          value={remainingQTY || 0} 
           className="customer-form__input22" 
           readOnly
         />
 
-        <label htmlFor="unitCost" className="customer-form__label">
-          Unit Cost:
+        <label htmlFor="unitCost" className="customer-form__label">          
+          <span>Unit Cost: <span className="required-field">*</span></span>
         </label>
         <input
           type="text"
@@ -205,21 +242,22 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           value={unitCost}
           onChange={(e) => setUnitCost(e.target.value)}
           className="customer-form__input"
+          required
         />
 
-        <label htmlFor="purchasePrice" className="customer-form__label">
-          Purchase Price:
+        <label htmlFor="purchasePrice" className="customer-form__label">          
+          <span>Purchase Price:<span className="required-field">*</span></span>
         </label>
         <input
           type="text"
           id="purchasePrice"
           value={purchasePrice}
-          onChange={(e) => setPurchasePrice(e.target.value)}
           className="customer-form__input"
+          readOnly 
         />
 
-        <label htmlFor="invoiceNo" className="customer-form__label">
-          Invoice No.:
+        <label htmlFor="invoiceNo" className="customer-form__label">          
+          <span>Invoice No.: <span className="required-field">*</span></span>
         </label>
         <input
           type="text"
@@ -227,10 +265,11 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           value={invoiceNo}
           onChange={(e) => setInvoiceNo(e.target.value)}
           className="customer-form__input"
+          required
         />
 
         <label htmlFor="invoiceDate" className="customer-form__label">
-          Invoice Date:
+          <span>Invoice Date: <span className="required-field">*</span></span>
         </label>
         <input
           type="date"
@@ -238,6 +277,7 @@ const AddOrEditPItem = ({ customerId, editpo, setShowAddOrEdit, availableQty, pu
           value={invoiceDate}
           onChange={(e) => setInvoiceDate(e.target.value)}
           className="customer-form__input"
+          required
         />
       </div>
       <div className="ButtonContainer1">

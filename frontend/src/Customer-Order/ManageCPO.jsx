@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import SalesOrder from "./CustomerPo";
-import { BiAddToQueue, BiEdit, BiSearch, BiTrash } from "react-icons/bi";
-import { Modal, Tooltip, Pagination } from "antd";
+import SalesOrder from "../Customer-Order/CustomerPo";
+import { BiAddToQueue, BiEdit, BiSearch } from "react-icons/bi";
+import { MdDelete } from "react-icons/md";
+import { Modal, Tooltip, Pagination, Popconfirm } from "antd";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Select from "react-select";
@@ -18,25 +19,24 @@ function ManageCPO() {
   const [currentCpoId, setCurrentCpoId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [cpoList, setCpoList] = useState([]);
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [selectedCpoId, setSelectedCpoId] = useState()
+  const [selectedCpoId, setSelectedCpoId] = useState();
+  const [filteredCPOs, setFilteredCPOs] = useState([]);
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     loadCpo(currentPage);
-    loadSalesItems();
     loadCpoList();
+    loadSalesItems();
   }, [currentPage]);
 
   const loadCpoList = async () => {
     try {
       const { data } = await axios.get("http://localhost:8000/api/customerpos");
-      const extractedCustomers = data.customers.map((item) => item.customern);
-      setCustomer(extractedCustomers);
+      console.log("CPO:", data);
     } catch (err) {
-      console.log("Error loading customers:", err);
+      console.error("Error loading customers:", err);
     }
   };
 
@@ -47,63 +47,36 @@ function ManageCPO() {
       );
       setCustomerpo(data.customers || []);
       setTotalPages(data.totalPages || 1);
-      setCpoList(data.customers.map((item) => item.customerpo));
+
+      const uniqueCustomers = Array.from(
+        new Set(data.customers.map((item) => JSON.stringify(item.customern)))
+      ).map((cust) => JSON.parse(cust));
+      console.log("CPO Customers:", uniqueCustomers);
+
+      setCustomer(uniqueCustomers);
     } catch (err) {
-      console.log(err);
+      console.error("Error loading CPO:", err);
     }
   };
 
-
-
-  const loadSalesItemsForCPO = async (cpoId) => {
-    if (!cpoId) {
-        console.error("CPO ID is undefined");
-        return; 
-    }
+  const loadSalesItems = async () => {
     try {
-        const { data } = await axios.get(`http://localhost:8000/api/itempos?customerPo=${cpoId}`);
-        setSalesItems(data); 
+      const { data } = await axios.get(`http://localhost:8000/api/itempos`);
+      setSalesItems(data || []);
     } catch (err) {
-        console.error("Error loading sales items for CPO:", err);
-        toast.error("Failed to load sales items");
+      console.error("Error loading sales items for CPO:", err);
+      toast.error("Failed to load sales items");
     }
-};
+  };
 
-useEffect(() => {
-  if (editingCpo && editingCpo._id) {
-      loadSalesItemsForCPO(editingCpo._id); 
-  }
-}, [editingCpo]);
-
-
-  const handleEditItem = async (item) => {
+  const handleEditItem = (item) => {
     setEditingCpo(item);
     setVisible(true);
-    setCurrentCpoId(item._id); 
-    console.log("Editing CPO ID: ", item._id); 
-    await loadSalesItemsForCPO(item._id);
+    setCurrentCpoId(item._id);
   };
 
-  
-
-  const handleCpoSelect = async (cpoId) => {
+  const handleCpoSelect = (cpoId) => {
     setSelectedCpoId(cpoId);
-    await loadSalesItemsForCPO(cpoId); 
-  };
-
-
-  const handleSaveSalesItems = async (newSalesItems) => {
-    try {
-      await axios.post(`http://localhost:8000/api/itempos`, {
-        items: newSalesItems,
-        customerPo: selectedCpoId, 
-      });
-      toast.success("Sales items saved successfully!");
-      await loadSalesItemsForCPO(selectedCpoId); 
-    } catch (err) {
-      console.error("Error saving sales items:", err);
-      toast.error("Failed to save sales items");
-    }
   };
 
   const handleDelete = async (itemId) => {
@@ -111,47 +84,62 @@ useEffect(() => {
       const { data } = await axios.delete(
         `http://localhost:8000/api/customerpos/${itemId}`
       );
-      console.log(data);
       if (data?.error) {
         toast.error(data.error);
       } else {
-        toast.success(`${data.message}`);
+        toast.success(data.message);
         loadCpo(currentPage);
       }
     } catch (err) {
-      console.log(err);
+      console.error("Error deleting CPO:", err);
     }
   };
-
-  const loadSalesItems = async () => {
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/itempos");
-      if (Array.isArray(data) && data.length > 0) {
-        setSalesItems(data);
-      } else {
-        setSalesItems([]);
-      }
-    } catch (err) {
-      console.error("Error loading sales items:", err);
-      toast.error("Failed to load sales items");
-    }
-  };
-
 
   const onPageChange = (page) => {
     setCurrentPage(page);
   };
 
-  const refreshCustomers = async () => {
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/customers");
-      setCustomer(data.customers || []);
-    } catch (err) {
-      console.log(err);
+  const filteredCPO = customern
+    ? customerpo.filter((item) => item.customern?._id === customern)
+    : customerpo;
+
+  useEffect(() => {
+    if (customern) {
+      const cposForSelectedCustomer = customerpo.filter(
+        (item) => item.customern?._id === customern
+      );
+      setFilteredCPOs(cposForSelectedCustomer);
+      setSelectedCpoId(null);
+    } else {
+      setFilteredCPOs([]);
     }
+  }, [customern, customerpo]);
+
+  const displayedCPO = selectedCpoId
+    ? filteredCPOs.filter((item) => item._id === selectedCpoId)
+    : filteredCPO;
+
+  const filteredByDateCPO = orderDate
+    ? displayedCPO.filter(
+        (item) => new Date(item.date).toISOString().split("T")[0] === orderDate
+      )
+    : displayedCPO;
+
+  const searchAll = () => {
+    if (!searchInput) return filteredByDateCPO;
+
+    return filteredByDateCPO.filter((item) => {
+      const customerName = item.customern?.name.toLowerCase() || "";
+      const customerPO = item.customerpo.toLowerCase();
+      const date = new Date(item.date).toLocaleDateString();
+
+      return (
+        customerName.includes(searchInput.toLowerCase()) ||
+        customerPO.includes(searchInput.toLowerCase()) ||
+        date.includes(searchInput.toLowerCase())
+      );
+    });
   };
-
-
 
   return (
     <>
@@ -162,10 +150,10 @@ useEffect(() => {
             <div className="Dropdown-item">
               <Select
                 name="customern"
-                value={customer.find((c) => c._id === customern)}
-                onChange={(selectedOption) =>
-                  setCustomern(selectedOption.value)
-                }
+                value={customer.find((c) => c._id === customern) || null}
+                onChange={(selectedOption) => {
+                  setCustomern(selectedOption?.value || "");
+                }}
                 className="SearchbelDropdown"
                 placeholder="Select Customer"
                 options={customer.map((cust) => ({
@@ -173,7 +161,6 @@ useEffect(() => {
                   label: cust.name,
                 }))}
               />
-
               <label htmlFor="orderDate" className="label">
                 Order Date:
               </label>
@@ -182,19 +169,20 @@ useEffect(() => {
                 id="orderDate"
                 value={orderDate}
                 onChange={(e) => setOrderDate(e.target.value)}
+                className="orderinput"
               />
-
               <Select
                 className="SearchbelDropdown"
                 placeholder="Customer PO..."
                 onChange={(selectedOption) => {
-                  setCurrentCpoId(selectedOption.value)
-                  handleCpoSelect(selectedOption.value)
+                  setCurrentCpoId(selectedOption.value);
+                  handleCpoSelect(selectedOption.value);
                 }}
-                options={cpoList.map((cpo) => ({
-                  value: cpo,
-                  label: cpo,
+                options={filteredCPOs.map((cpo) => ({
+                  value: cpo._id,
+                  label: cpo.customerpo,
                 }))}
+                isDisabled={!customern}
               />
             </div>
             <div>
@@ -202,12 +190,22 @@ useEffect(() => {
                 type="search"
                 className="searchitem"
                 placeholder="Search..."
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                }}
               />
-              <button className="StyledButton" onClick={() => {}}>
+              <button className="StyledButton">
                 <BiSearch className="SearchIcon" />
                 Search
               </button>
-              <button className="StyledButton" onClick={() => setVisible(true)}>
+              <button
+                className="StyledButton"
+                onClick={() => {
+                  setVisible(true);
+                  setEditingCpo(null);
+                }}
+              >
                 <BiAddToQueue className="Add" />
                 Add CPO
               </button>
@@ -217,7 +215,7 @@ useEffect(() => {
         <div>
           <h2 className="list-name">Customer PO List:</h2>
           <table className="table table-bordered table-striped">
-            <thead className="table-secondary">
+            <thead className="table-secondary TH-SIZE">
               <tr>
                 <th>Customer Name</th>
                 <th>Customer PO</th>
@@ -227,38 +225,58 @@ useEffect(() => {
                 <th>Action</th>
               </tr>
             </thead>
-
             <tbody>
-              {customerpo.map((item) => (
-                <tr key={item._id}>
-                  <td>{item.customern?.name}</td>
-                  <td>{item.customerpo}</td>
-                  <td>{new Date(item.date).toLocaleDateString()}</td>
-                  <td>{item.cpoTotal}                        </td>
+              {searchAll().map((item) => {
+                const relatedSalesItems = salesItems.filter(
+                  (salesItem) => salesItem.customerPo === item._id
+                );
 
-                  <td>{item.status}</td>
-                  <td>
-                    <div className="button-group">
-                      <Tooltip title="Edit">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="btns1"
-                        >
-                          <BiEdit />
-                        </button>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <button
-                          onClick={() => handleDelete(item._id)}
-                          className="btns2"
-                        >
-                          <BiTrash />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                const totalSalesPrice = relatedSalesItems.reduce(
+                  (total, salesItem) => total + (salesItem.salesPrice || 0),
+                  0
+                );
+
+                return (
+                  <tr key={item._id} className="TD-SIZE">
+                    <td>{item.customern?.name || ""}</td>
+                    <td>{item.customerpo}</td>
+                    <td>{new Date(item.date).toLocaleDateString()}</td>
+                    <td>{totalSalesPrice.toFixed(2)}</td>
+                    <td>{item.status}</td>
+                    <td>
+                      <div className="button-group">
+                        <Tooltip title="Edit">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="btns1"
+                          >
+                            <BiEdit className="icon-size" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <Popconfirm
+                            placement="topLeft"
+                            title="Are you sure to delete this customer?"
+                            onConfirm={() => handleDelete(item._id)}
+                            okText="Delete"
+                            okButtonProps={{
+                              style: {
+                                backgroundColor: "red",
+                                color: "white",
+                                border: "none",
+                              },
+                            }}
+                          >
+                            <button className="btns2">
+                              <MdDelete className="icon-size" />
+                            </button>
+                          </Popconfirm>
+                        </Tooltip>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -272,7 +290,10 @@ useEffect(() => {
       </div>
       <Modal
         visible={visible}
-        onCancel={() => setVisible(false)}
+        onCancel={() => {
+          setVisible(false);
+          setEditingCpo(null);
+        }}
         footer={null}
         width={750}
       >
@@ -280,10 +301,9 @@ useEffect(() => {
           setVisible={setVisible}
           editingCpo={editingCpo}
           refreshData={loadCpo}
-          currentCpoId={currentCpoId}
-          refreshCustomers={refreshCustomers} // new added
-          loadSalesItemsForCPO={loadSalesItemsForCPO} // new added
-          onSave={handleSaveSalesItems} 
+          refreshCustomers={loadCpoList}
+          currentPage={currentPage}
+          loadCpo={loadCpo}
         />
       </Modal>
     </>

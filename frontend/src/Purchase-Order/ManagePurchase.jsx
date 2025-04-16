@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import PurchaseOrder from "./PurchaseOrder";
-import { BiAddToQueue, BiEdit, BiSearch, BiTrash } from "react-icons/bi";
-import { Modal, Tooltip } from "antd";
+import { BiAddToQueue, BiEdit, BiSearch } from "react-icons/bi";
+import { MdDelete } from "react-icons/md";
+import { Modal, Tooltip, Popconfirm, Pagination } from "antd";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Pagination } from "antd";
 import Select from "react-select";
 
 function ManagePurchase() {
@@ -12,6 +12,7 @@ function ManagePurchase() {
   const [poList, setPoList] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [purchaseData, setPurchaseData] = useState([]);
+  const [filteredPurchaseData, setFilteredPurchaseData] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -19,34 +20,16 @@ function ManagePurchase() {
   const [sortField, setSortField] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [purchaseItems, setPurchaseItems] = useState([]);
-
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedCPO, setSelectedCPO] = useState("");
   const [purchaseEditing, setPurchaseE] = useState(null);
   const [associatedItems, setAssociatedItems] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-
-  const [purchasePrice, setPurchasePrice] = useState(null);
+  const [searchInput, setSearchInput] = useState(""); 
 
   useEffect(() => {
     loadPurchase();
-    loadcCustomers();
-    saveStockToDatabase();
   }, []);
-
-  useEffect(() => {
-    console.log("Selected Customer ID:", selectedCustomerId);
-    console.log("Selected CPO:", selectedCPO);
-  }, [selectedCustomerId, selectedCPO]);
-
-  const loadcCustomers = async () => {
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/customers");
-      setCustomers(Array.isArray(data.customers) ? data.customers : []);
-    } catch (err) {
-      console.log(err);
-    }
-  };
 
   const loadPurchase = async (page = 1) => {
     try {
@@ -54,6 +37,17 @@ function ManagePurchase() {
         `http://localhost:8000/api/purchases?page=${page}&limit=${pageSize}&sortField=${sortField}&sortOrder=${sortOrder}`
       );
       setPurchaseData(data.items);
+      setFilteredPurchaseData(data.items);
+
+      const uniqueCustomers = [
+        ...new Set(data.items.map((purchase) => purchase.customer._id)),
+      ].map(
+        (id) =>
+          data.items.find((purchase) => purchase.customer._id === id).customer
+      );
+
+      setCustomers(uniqueCustomers);
+
       const uniquePOs = [
         ...new Set(data.items.map((purchase) => purchase.purchase)),
       ];
@@ -94,23 +88,19 @@ function ManagePurchase() {
   };
 
   const handleEditPurchase = (item) => {
-    console.log("Editing purchase:", item);
     if (item && item._id) {
       setPurchaseE(item);
-      setSelectedCustomerId(item.customer.name);
+      setSelectedCustomerId(item.customer._id);
       setSelectedCPO(item.customerpo);
       setAssociatedItems(item.associatedItems || []);
       setVisible(true);
       setIsEditing(true);
-      console.log("Customer ID:", item.customer.name);
-      console.log("Customer PO:", item.customerpo);
     } else {
       console.error("Invalid item for editing:", item);
     }
   };
 
   const handleCloseModal = () => {
-    console.log("Closing Modal");
     setVisible(false);
     setIsEditing(false);
     setPurchaseE(null);
@@ -120,7 +110,6 @@ function ManagePurchase() {
   const handleAddPurchaseItem = (newItem) => {
     setPurchaseItems((prevItems) => [...prevItems, newItem]);
   };
-
 
   const saveStockToDatabase = async (itemsToSave) => {
     try {
@@ -143,9 +132,7 @@ function ManagePurchase() {
     }
   };
 
-
   const loadItemstock = async (itemsToLoad) => {
-
     try {
       const purchasePiceRequests = itemsToLoad.map((item) =>
         axios.get(
@@ -175,16 +162,83 @@ function ManagePurchase() {
       });
       await saveStockToDatabase(updatedFilteredItems);
     } catch (err) {
+      console.log(err);
     }
   };
-
-
 
   useEffect(() => {
     if (purchaseData.length > 0) {
       loadItemstock(purchaseData);
     }
   }, [purchaseData]);
+
+  const refreshPurchaseData = () => {
+    loadPurchase(currentPage);
+  };
+
+  const handleCustomerChange = (selectedOption) => {
+    setSelectedCustomerId(selectedOption.value);
+    filterPurchaseData(selectedOption.value, selectedCPO, selectedDate);
+  };
+
+  const handlePOChange = (selectedOption) => {
+    setSelectedCPO(selectedOption.value);
+    filterPurchaseData(selectedCustomerId, selectedOption.value, selectedDate);
+  };
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    filterPurchaseData(selectedCustomerId, selectedCPO, date);
+  };
+
+  const filterPurchaseData = (customerId, po, date) => {
+    let filteredData = purchaseData;
+
+    if (customerId) {
+      filteredData = filteredData.filter(
+        (purchase) => purchase.customer._id === customerId
+      );
+    }
+
+    if (po) {
+      filteredData = filteredData.filter(
+        (purchase) => purchase.purchase === po
+      );
+    }
+
+    if (date) {
+      filteredData = filteredData.filter(
+        (purchase) =>
+          new Date(purchase.date).toISOString().split("T")[0] === date
+      );
+    }
+
+    setFilteredPurchaseData(filteredData);
+
+    const uniquePOs = [
+      ...new Set(filteredData.map((purchase) => purchase.purchase)),
+    ];
+    setPoList(uniquePOs.map((po) => ({ value: po, label: po })));
+  };
+
+  // New search function
+  const searchPurchases = () => {
+    if (!searchInput) return filteredPurchaseData;
+
+    return filteredPurchaseData.filter((purchase) => {
+      const customerName = purchase.customer?.name.toLowerCase() || "";
+      const purchaseOrder = purchase.purchase.toLowerCase();
+      const customerPO = purchase.customerpo.toLowerCase();
+      const date = new Date(purchase.date).toLocaleDateString();
+
+      return (
+        customerName.includes(searchInput.toLowerCase()) ||
+        purchaseOrder.includes(searchInput.toLowerCase()) ||
+        customerPO.includes(searchInput.toLowerCase()) ||
+        date.includes(searchInput.toLowerCase())
+      );
+    });
+  };
 
   return (
     <>
@@ -200,10 +254,7 @@ function ManagePurchase() {
                   value: customer._id,
                   label: customer.name,
                 }))}
-                onChange={(selectedOption) => {
-                  console.log("Selected Customer:", selectedOption);
-                  setSelectedCustomerId(selectedOption.value);
-                }}
+                onChange={handleCustomerChange}
               />
 
               <label htmlFor="orderDate" className="label">
@@ -213,19 +264,25 @@ function ManagePurchase() {
                 type="date"
                 id="orderDate"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="orderinput"
               />
               <Select
                 className="SearchbelDropdown"
                 placeholder="Select PO.."
                 options={poList}
-                onChange={(selectedOption) => {
-                  setSelectedCPO(selectedOption.value);
-                }}
+                onChange={handlePOChange}
               />
             </div>
 
             <div>
+              <input
+                type="search"
+                className="searchitem"
+                placeholder="Search..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
               <button className="StyledButton" onClick={() => {}}>
                 <BiSearch className="SearchIcon" />
                 Search
@@ -240,7 +297,7 @@ function ManagePurchase() {
         <div>
           <h2 className="list-name">Order List:</h2>
           <table className="table table-bordered table-striped">
-            <thead className="table-secondary">
+            <thead className="table-secondary TH-SIZE">
               <tr>
                 <th
                   onClick={() => handleSort("customer.name")}
@@ -292,9 +349,9 @@ function ManagePurchase() {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(purchaseData) &&
-                purchaseData.map((purchase, index) => (
-                  <tr key={index}>
+              {Array.isArray(searchPurchases()) &&
+                searchPurchases().map((purchase, index) => (
+                  <tr key={index} className="TD-SIZE">
                     <td>{purchase.customer?.name}</td>
                     <td>{purchase.purchase}</td>
                     <td>{purchase.customerpo}</td>
@@ -315,7 +372,7 @@ function ManagePurchase() {
                             onClick={() => handleEditPurchase(purchase)}
                             className="btns1"
                           >
-                            <BiEdit />
+                            <BiEdit className="icon-size" />
                           </button>
                         </Tooltip>
                         <Tooltip
@@ -326,12 +383,23 @@ function ManagePurchase() {
                             borderRadius: "10%",
                           }}
                         >
-                          <button
-                            onClick={() => handleDelete(purchase._id)}
-                            className="btns2"
+                          <Popconfirm
+                            placement="topLeft"
+                            title="Are you sure to delete this customer?"
+                            onConfirm={() => handleDelete(purchase._id)}
+                            okText="Delete"
+                            okButtonProps={{
+                              style: {
+                                backgroundColor: "red",
+                                color: "white",
+                                border: "none",
+                              },
+                            }}
                           >
-                            <BiTrash />
-                          </button>
+                            <button className="btns2">
+                              <MdDelete className="icon-size" />
+                            </button>
+                          </Popconfirm>
                         </Tooltip>
                       </div>
                     </td>
@@ -342,7 +410,6 @@ function ManagePurchase() {
         </div>
         <Modal
           open={visible}
-          // onOk={() => setVisible(false)}
           onOk={handleCloseModal}
           onCancel={() => setVisible(false)}
           width={750}
@@ -356,7 +423,10 @@ function ManagePurchase() {
             associatedItems={associatedItems}
             customerpO={selectedCPO}
             handleAddPurchaseItem={handleAddPurchaseItem}
-            // updatePurchaseTotal={updatePurchaseTotal}
+            setVisible={setVisible}
+            onSuccess={refreshPurchaseData}
+            setPurchaseE={setPurchaseE}
+            setIsEditing={setIsEditing}
           />
         </Modal>
         <Pagination

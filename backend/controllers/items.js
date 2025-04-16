@@ -18,7 +18,6 @@ export const createItem = async (req, res) => {
       status,
       stock,
     } = req.fields;
-    console.log(req.fields);
 
     if (!item || !item.trim())
       return res.status(400).json({ error: "Item is required" });
@@ -55,7 +54,6 @@ export const createItem = async (req, res) => {
 
 export const updateOneItem = async (req, res) => {
   const { item, stock } = req.fields;
-  console.log("updateOneItem",req.fields)
   try {
     const updatedItem = await Item.findOneAndUpdate(
       { item: item },

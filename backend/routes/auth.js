@@ -1,13 +1,13 @@
-import express from "express";
-import { register, login, forgetPassword } from "../controllers/auth.js";
-//import { isAdmin, requireSignin } from "../middleware/auth.js";
+// import express from "express";
+// import { register, login, forgetPassword } from "../controllers/auth.js";
+// import { isAdmin, requireSignin } from "../middleware/auth.js";
 
-const router = express.Router();
+// const router = express.Router();
 // middleware
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/forgot-password",forgetPassword);
+// router.post("/register", register);
+// router.post("/login", login);
+// router.post("/forgot-password",forgetPassword);
 // router.get("/auth-check",requireSignin,(req, res) => {
 //       res.json({ok :true});
 // } )
@@ -22,9 +22,26 @@ router.post("/forgot-password",forgetPassword);
 // router.get("/all-orders", requireSignin, isAdmin, allOrders)
  
 
-//testing
+// testing
 //  router.get("/secret",requireSignin,isAdmin,(req, res) => {
 //       res.json({currentUser:req.user})
 //  })
-//router.get("/pra", pra);
+// router.get("/pra", pra);
+// export default router;
+
+
+
+import express from "express";
+import { register, login, forgetPassword, resetPassword, verifyOtp } from "../controllers/auth.js";
+
+
+const router = express.Router();
+// middleware
+
+router.post("/register", register);
+router.post("/login", login);
+router.post("/forgot-password",forgetPassword);
+router.post("/reset-password", resetPassword);
+router.post("/verify-otp", verifyOtp);
+
 export default router;

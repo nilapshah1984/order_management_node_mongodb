@@ -62,7 +62,7 @@ export const removeItemPo = async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
-    res.json({ message: 'IPO deleted successfully', item });
+    res.json({ message: 'CPO Item deleted successfully', item });
   } catch (err) {
     console.error('Error deleting item:', err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -71,52 +71,48 @@ export const removeItemPo = async (req, res) => {
 
 
 
-// export const readItemPo = async (req, res) => {
-//   try {
-//     const item = await ItemPo.findOne({ slug: req.params.slug })
-//       .populate("item");
-//     if (!item) {
-//       return res.status(404).json({ error: 'Item not found' });
-//     }
-//     res.json(item);
-//   } catch (err) {
-//     console.log('Error fetching item:', err);
-//     res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// };
+export const readItemPo = async (req, res) => {
+  try {
+    const item = await ItemPo.findOne({ slug: req.params.slug })
+      .populate("item");
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    res.json(item);
+  } catch (err) {
+    console.log('Error fetching item:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 
 
 
 
-// export const updateItemPo = async (req, res) => {
-//   try {
-//     const { item: itemId, qty, cost, tax, salesPrice } = req.fields; 
-    
+export const updateItemPo = async (req, res) => {
+  try {
+    const { qty, cost, tax, salesPrice, customerPo } = req.body; 
+    console.log("Request Body:", req.body);
 
-//     if (!mongoose.Types.ObjectId.isValid(itemId)) {
-//       return res.status(400).json({ error: 'Invalid item ID' });
-//     }
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid itempo ID' });
+    }
 
-//    const updatedIPO = await ItemPo.findByIdAndUpdate(
-//       req.params.id,
-//       {
-//         item: itemId, 
-//         qty,
-//         cost,
-//         tax,
-//         salesPrice
-//       },
-//       { new: true }
-//     );
+    const updatedItemPo = await ItemPo.findByIdAndUpdate(
+      req.params.id,
+      { qty, cost, tax, salesPrice, customerPo },
+      { new: true }
+    );
 
-//     if (!updatedIPO) {
-//       return res.status(404).json({ error: 'Item not found' });
-//     }
+    if (!updatedItemPo) {
+      return res.status(404).json({ error: 'ItemPo not found' });
+    }
+    console.log(`Item updated successfully with CPO ID: ${updatedItemPo}`);
 
-//     res.json(updatedIPO);
-//   } catch (err) {
-//     console.log('Error updating ItemPo:', err);
-//     res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// };
+    res.json(updatedItemPo);
+  } catch (err) {
+    console.log('Error updating ItemPo:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+

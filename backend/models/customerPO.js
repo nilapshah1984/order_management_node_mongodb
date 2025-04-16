@@ -17,8 +17,8 @@ const customerPO = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'draft'],
-    default: 'active',
+    enum: ['Active', 'Inactive'],
+    default: 'Active',
   },
   cpoTotal : {
     type: Number,

@@ -3,9 +3,9 @@ import AddCustomer from "./AddCustomer";
 import { BiAddToQueue, BiSearch, BiSolidEdit } from "react-icons/bi";
 import { MdDelete } from "react-icons/md";
 import { Modal, Pagination, Popconfirm, Tooltip } from "antd";
-import axios from "axios";
 import toast from "react-hot-toast";
 import "../StyleCSS/Customer.css";
+import { getCustomers,  deleteCustomer, searchCustomers,  } from '../services/customerApi';
 
 function ManageCustomer() {
   const [customers, setCustomers] = useState([]);
@@ -21,54 +21,10 @@ function ManageCustomer() {
 
 
 
-  const handleInputChange = async (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    if (value.trim()) {
-      try {
-        const { data } = await axios.get(`http://localhost:8000/api/customers?search=${value}`);
-        // setSuggestions(data.customers);
-        // setShowSuggestions(true);
-
-      } catch (err) {
-        console.log(err);
-      }
-    } else {
-      setSearchTerm("");
-      loadCustomers(currentPage);
-      setShowSuggestions(false);
-    }
-  };
-
-
-
-  useEffect(() => {
-    loadCustomers(currentPage);
-  }, [currentPage, sortField, sortOrder]);
-
-
-
-  const handleSearch = async () => {
-    try {
-      const { data } = await axios.get(`http://localhost:8000/api/customers?search=${searchTerm}&page=1&limit=10`);
-      setCustomers(data.customers);
-      setTotalPages(data.totalPages);
-      setCurrentPage(1); 
-    } catch (err) {
-      console.log('Search Error:', err);  
-    }
-  };
-  
-
 
   const loadCustomers = async (page, sortField = "", sortOrder = "") => {
     try {
-      const { data } = await axios.get(
-        `http://localhost:8000/api/customers?page=${page}&limit=10&sortField=${sortField}&sortOrder=${sortOrder}${
-          searchTerm ? `&search=${searchTerm}` : ""
-        }`
-      );
+      const { data } = await getCustomers(page, 10, sortField, sortOrder, searchTerm);
       setCustomers(data.customers);
       setTotalPages(data.totalPages); 
     } catch (err) {
@@ -78,7 +34,7 @@ function ManageCustomer() {
 
   const handleDelete = async (customerId) => {
     try {
-      const { data } = await axios.delete(`http://localhost:8000/api/customers/${customerId}`);
+      const { data } = await deleteCustomer(customerId);
       if (data?.error) {
         toast.error(data.error);
       } else {
@@ -95,9 +51,34 @@ function ManageCustomer() {
     setVisible(true);
   };
 
-  const onPageChange = (page) => {
-    setCurrentPage(page);
-    loadCustomers(page);
+  const handleSearch = async () => {
+    try {
+      const { data } = await searchCustomers(searchTerm);
+      setCustomers(data.customers);
+      setTotalPages(data.totalPages);
+      setCurrentPage(1); 
+    } catch (err) {
+      console.log('Search Error:', err);  
+    }
+  };
+
+  const handleInputChange = async (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.trim()) {
+      try {
+        const { data } = await searchCustomers(value);
+        setCustomers(data.customers);
+        setTotalPages(data.totalPages);
+        setCurrentPage(1);
+      } catch (err) {
+        console.log(err);
+      }
+    } else {
+      setSearchTerm("");
+      loadCustomers(currentPage);
+    }
   };
 
   const handleSort = (field) => {
@@ -106,6 +87,22 @@ function ManageCustomer() {
     setSortOrder(order);
     loadCustomers(currentPage, field, order);
   };
+
+  const onPageChange = (page) => {
+    setCurrentPage(page);
+    loadCustomers(page);
+  };
+
+  useEffect(() => {
+    loadCustomers(currentPage);
+  }, [currentPage, sortField, sortOrder]);
+
+  const handleClose = () => {
+    setVisible(false);
+    setEditingCustomers(null); 
+  };
+
+  
 
   return (
     <>
@@ -136,7 +133,7 @@ function ManageCustomer() {
         <div className="table-responsive">
           <h2 className="list-name">Customer List:</h2>
           <table className="table table-bordered table-striped table-hover shadow">
-            <thead className="table-secondary">
+            <thead className="table-secondary TH-SIZE">
               <tr>
                 <th onClick={() => handleSort("name")}>
                   Name
@@ -163,17 +160,17 @@ function ManageCustomer() {
             </thead>
             <tbody>
               {customers.map((customer) => (
-                <tr key={customer._id}>
+                <tr key={customer._id} className="TD-SIZE">
                   <td>{customer.name}</td>
                   <td>{customer.email}</td>
                   <td>{customer.phone}</td>
-                  <td>{customer.area}</td>
+                  <td>{customer.area} -{customer.city}</td>
                   <td>{customer.status}</td>
                   <td>
                     <div className="button-group">
                       <Tooltip title="Edit">
                         <button className="btns1" onClick={() => handleEditCustomer(customer)}>
-                          <BiSolidEdit />
+                          <BiSolidEdit className="icon-size"/>
                         </button>
                       </Tooltip>
                       <Tooltip title="Delete">
@@ -182,9 +179,12 @@ function ManageCustomer() {
                           description="Are you sure to delete this customer?"
                           onConfirm={() => handleDelete(customer._id)}
                           okText="Delete"
+                          okButtonProps={{
+                            style: { backgroundColor: "red", color: "white", border: "none" },
+                          }}
                         >
                           <button className="btns2">
-                            <MdDelete />
+                            <MdDelete  className="icon-size"/>
                           </button>
                         </Popconfirm>
                       </Tooltip>
@@ -209,7 +209,13 @@ function ManageCustomer() {
           onCancel={() => setVisible(false)}
           footer={null}
         >
-          <AddCustomer editingCustomer={editingCustomers} setVisible={setVisible} loadCustomers={loadCustomers} />
+          <AddCustomer 
+            editingCustomer={editingCustomers} 
+            setVisible={setVisible} 
+            loadCustomers={loadCustomers} 
+            setEditingCustomers={setEditingCustomers} 
+            handleClose={handleClose} 
+          />
         </Modal>
       </div>
     </>
@@ -217,3 +223,4 @@ function ManageCustomer() {
 }
 
 export default ManageCustomer;
+

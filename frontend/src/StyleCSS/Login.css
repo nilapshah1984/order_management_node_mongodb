@@ -1,0 +1,206 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+  
+  .login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* animation: backgroundChange 5s infinite;  */
+    padding: 1rem;
+  }
+  
+  /* @keyframes backgroundChange {
+    0% { background: linear-gradient(135deg, #1e3c72, #2a5298); }
+    50% { background: linear-gradient(135deg, #6a11cb, #2575fc); }
+    75% { background: linear-gradient(135deg, #12c2e9, #c471ed, #f64f59); }
+    100% { background: linear-gradient(135deg, #1e3c72, #2a5298); }
+  } */
+  
+  .login-card {
+    /* min-height: 80vh;
+    min-width: 90vh; */
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  /* .login-header h1 {
+    color: #1a202c; 
+    color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-size: 2.875rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }  */
+  
+  .WB {
+    color: #6e65c6;
+    font-size: 3.0rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .signupline {
+    font-size: 2.5rem;
+    color: #6e65c6;
+  }
+
+  .forgtpswrd {
+    font-size: 1.8rem;
+    color: gray;
+  }
+  
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    color: #4a5568;
+    font-size: 2.25rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .form-group input:not([type="checkbox"]) {
+    width: 100%;
+    padding: 2.25rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 2rem;
+    transition: all 0.2s ease;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .form-group .error {
+    color: #e53e3e;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: none;
+  }
+
+  .error.active {
+    display: block;
+    border: none;
+    font-size: 12px;
+  }
+
+ 
+  .checkbox-group {
+    margin-bottom: 1rem;
+  }
+  
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    margin-top: 1rem;
+  }
+  
+  .checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    font-family: 1rem;
+  }
+  
+  .checkbox-text {
+    color: #4a5568;
+    font-size: 2rem;
+    padding-bottom: 0.3rem;
+  }
+  
+  .login-button {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .login-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  }
+  
+  .login-button:active {
+    transform: translateY(0);
+  }
+  
+  .login-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .additional-options {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+  
+  .additional-options a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 2rem;
+    transition: color 0.2s ease;
+  }
+  
+  .additional-options a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+  }
+  
+  .separator {
+    margin: 0 0.5rem;
+    color: #a0aec0;
+  }
+  
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-3px, 0, 0);
+    }
+    40%,
+    60% {
+      transform: translate3d(3px, 0, 0);
+    }
+  }

@@ -1,3 +1,11 @@
+// local --- http://localhost:8000
+
+
+// Render -- http://localhost:8000
+
+
+
+//auth.js
 import axios from "axios";
 import {  createContext, useContext, useEffect, useState } from "react";
 

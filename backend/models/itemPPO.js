@@ -4,7 +4,7 @@ const itemPPoSchema = new mongoose.Schema(
   {
     item: {
       type: mongoose.Schema.Types.ObjectId, 
-      ref: "Item",
+      ref: "ItemPo",
       required: true,
     },
     altqty: {

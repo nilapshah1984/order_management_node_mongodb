@@ -5,18 +5,15 @@ import PurchaseOrder from "../models/purchaseOrder.js"
 dotenv.config();
 
 export const createPurchase = async (req, res) => {
-  try {    
-      
+  try {          
       const { customer, customerpo,date,purchase, status, totalPurchase } = req.fields;
-      console.log(req.fields);
-      
+      console.log(req.fields);      
       // Validation
       if (!customer || !customer.trim()) return res.status(400).json({ error: 'Customer is required' });
       if (!customerpo || !customerpo.trim()) return res.status(400).json({ error: 'CustomerPO is required' });
       if (!purchase || !purchase.trim()) return res.status(400).json({ error: 'CustomerPO is required' });
       if (!status || !status.trim()) return res.status(400).json({ error: 'Status is required' });
       if (!date || !date.trim()) return res.status(400).json({ error: 'Date is required' });
-
     // Create new item
     const po = new PurchaseOrder({ ...req.fields});
     await po.save();
@@ -26,6 +23,31 @@ export const createPurchase = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+////for Duplicate Purchase No. but not work this query
+// export const createPurchase = async (req, res) => {
+//   try {
+//     const { customer, customerpo, date, purchase, status, totalPurchase } = req.fields;
+//     console.log(req.fields);
+//     // Validation
+//     if (!customer || !customer.trim()) return res.status(400).json({ error: 'Customer is required' });
+//     if (!customerpo || !customerpo.trim()) return res.status(400).json({ error: 'CustomerPO is required' });
+//     if (!purchase || !purchase.trim()) return res.status(400).json({ error: 'Purchase number is required' });
+//     if (!status || !status.trim()) return res.status(400).json({ error: 'Status is required' });
+//     if (!date || !date.trim()) return res.status(400).json({ error: 'Date is required' });
+
+//     const existingPurchase = await PurchaseOrder.findOne({ purchase });
+//     if (existingPurchase) {
+//       return res.status(400).json({ error: 'Purchase number already exists' });
+//     }
+//     const po = new PurchaseOrder({ ...req.fields });
+//     await po.save();
+//     res.status(201).json(po);
+//   } catch (err) {
+//     console.log('Error creating createCustomerPo:', err);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// };
 
 
 export const createPurchaseTotal = async (req, res) => {

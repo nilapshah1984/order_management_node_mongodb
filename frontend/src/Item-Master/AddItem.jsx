@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import "../StyleCSS/Customer.css";
 
-const AddItem = ({ editingItem, setVisible, loadItems }) => {
+const AddItem = ({ editingItem, setVisible, loadItems, setEditingItem }) => {
   const [items, setItems] = useState([]);
   const initialData = {
     item: "",
@@ -36,7 +36,8 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
         console.log("Fetched suppliers:", data);
 
         if (Array.isArray(data)) {
-          setSuppliers(data);
+          const activeSuppliers = data.filter(supplier => supplier.status === "Active");
+          setSuppliers(activeSuppliers);
         } else {
           console.error("Unexpected response format:", data);
         }
@@ -60,13 +61,14 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => { 
     e.preventDefault();
     try {
       let res;
       if (editingItem && editingItem._id) {
         res = await axios.put(
-          `http://localhost:8000/api/items/${editingItem._id}`,
+          `http://localhost:8000
+/api/items/${editingItem._id}`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -102,16 +104,20 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
   };
 
   const handleCancel = () => {
+    setVisible(false);
     resetForm();
+    setEditingItem(null);
   };
+
 
   return (
     <div>
       <form onSubmit={handleSubmit} className="customer-form">
-        <h3 className="form-heading">Add Item</h3>
+        {editingItem ? "" : ""}
+        <h3 className="form-heading">{editingItem ? "Edit Item" : "Add Item"}</h3>
         <div className="customer-form">
           <label htmlFor="name" className="customer-form__label">
-            Item Name:
+            <span>Item Name: <span className="required-field">*</span></span>
           </label>
           <input
             type="text"
@@ -119,16 +125,18 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
             value={formData.item}
             onChange={handleInputChange}
             className="customer-form__input"
+            required
           />
 
           <label htmlFor="supplier" className="customer-form__label">
-            Supplier:
+            <span>Supplier: <span className="required-field">*</span></span>
           </label>
           <select
             name="supplier"
             value={formData.supplier} 
             onChange={handleInputChange}
             className="customer-form__input"
+            required
           >
             <option value="">Select Supplier</option>
             {suppliers.map((supplier) => (
@@ -139,7 +147,7 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
           </select>
 
           <label htmlFor="category" className="customer-form__label">
-            Category:
+            <span>Category: <span className="required-field">*</span></span>
           </label>
           <input
             type="text"
@@ -147,9 +155,10 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
             value={formData.category}
             onChange={handleInputChange}
             className="customer-form__input"
+            required
           />
-          <label htmlFor="brand" className="customer-form__label">
-            Brand:
+          <label htmlFor="brand" className="customer-form__label">            
+            <span>Brand: <span className="required-field">*</span></span>
           </label>
           <input
             type="text"
@@ -157,8 +166,8 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
             value={formData.brand}
             onChange={handleInputChange}
             className="customer-form__input"
+            required
           />
-
 
           <label htmlFor="description" className="customer-form__label">
             Description:
@@ -171,32 +180,34 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
           />
 
           <label htmlFor="unit" className="customer-form__label">
-            Unit:
+            <span> Unit: <span className="required-field">*</span></span>           
           </label>
           <select
             name="unit"
             value={formData.unit}
             onChange={handleInputChange}
             className="customer-form__input"
+            required
           >
             <option value="KG">KG</option>
             <option value="PCS">PCS</option>
           </select>
 
-          <label htmlFor="status" className="customer-form__label">
-            Status:
+          <label htmlFor="status" className="customer-form__label">            
+            <span>Status: <span className="required-field">*</span></span>
           </label>
           <input
             type="checkbox"
             name="status"
-            checked={formData.status === "active"}
+            checked={formData.status === "Active"}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                status: e.target.checked ? "active" : "inactive",
+                status: e.target.checked ? "Active" : "Inactive",
               })
             }
             className="customer-form__input"
+            // required
           />
         </div>
 
@@ -218,3 +229,7 @@ const AddItem = ({ editingItem, setVisible, loadItems }) => {
 };
 
 export default AddItem; 
+
+
+
+

@@ -25,8 +25,8 @@ customer:{
   },
   status:{
       type: String,
-      enum: ['active', 'inactive','draft'],
-      default: 'active',
+      enum: ['Active', 'Inactive','draft'],
+      default: 'Active',
   },
   totalPurchase: {
     type: Number, 

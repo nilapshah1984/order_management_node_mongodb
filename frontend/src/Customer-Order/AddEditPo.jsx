@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import "../StyleCSS/Customer.css";
 
-const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
+const AddEditPo = ({ refreshData, currentCpoId, closeAddForm, itemToEdit,  loadCPO, currentPage  }) => {
   const [items, setItems] = useState([]);
   const [item, setItem] = useState("");
   const [qty, setQty] = useState("");
@@ -11,9 +11,7 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
   const [tax, setTax] = useState("");
   const [salesPrice, setSalesPrice] = useState("");
 
-  //add New State
   const [availableQty, setAvailableQty] = useState(0);
-  const [allocatedQty, setAllocatedQty] = useState(0);
   const [remainingQty, setRemainingQty] = useState(0);
 
   useEffect(() => {
@@ -21,7 +19,10 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
       try {
         const { data } = await axios.get("http://localhost:8000/api/items");
         if (Array.isArray(data.items)) {
-          setItems(data.items);
+          // setItems(data.items);
+          console.log("Item:", data)
+          const activeItems = data.items.filter(item => item.status === "Active");
+          setItems(activeItems);
         } else {
           setItems([]);
         }
@@ -33,32 +34,27 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
     loadItems();
   }, []);
 
-
   const handleItemChange = (e) => {
     const selectedItemId = e.target.value;
     setItem(selectedItemId);
     const selectedItem = items.find((i) => i._id === selectedItemId);
     if (selectedItem) {
-      const stock = selectedItem.stock; 
-      setAvailableQty(stock);  
-      setAllocatedQty(0); 
-      setRemainingQty(stock); 
+      const stock = selectedItem.stock;
+      setAvailableQty(stock);
+      setRemainingQty(stock);
     } else {
       console.log("Selected item not found");
     }
   };
 
-
   useEffect(() => {
-    if(qty !== "") {
+    if (qty !== "") {
       const remainingQty = availableQty - parseInt(qty);
-      setRemainingQty(remainingQty >= 0 ? remainingQty : 0); 
-    } else{
+      setRemainingQty(remainingQty >= 0 ? remainingQty : 0);
+    } else {
       setRemainingQty(availableQty);
     }
-  },[qty, availableQty]);
-
-
+  }, [qty, availableQty]);
 
   useEffect(() => {
     const qtyNum = parseFloat(qty) || 0;
@@ -71,15 +67,41 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
   }, [qty, cost, tax]);
 
   useEffect(() => {
-    console.log("Current CPO ID in AddEditPo:", currentCpoId); // Check the current CPO ID
-  }, [currentCpoId]);
+    if (itemToEdit && items.length > 0) {
+      console.log("Editing Item:", itemToEdit);
+      setQty(itemToEdit.qty);
+      setCost(itemToEdit.cost);
+      setTax(itemToEdit.tax);
+      setSalesPrice(itemToEdit.salesPrice);
+  
+      const selectedItem = items.find((i) => i._id === itemToEdit.item._id);
+      if (selectedItem) {
+        setAvailableQty(selectedItem.stock);
+      } else {
+        setAvailableQty(0); 
+      }  
+      setRemainingQty(itemToEdit.remainingQty);
+  
+      if (typeof itemToEdit.item === "string") {
+        setItem(itemToEdit.item);
+      } else if (itemToEdit.item && itemToEdit.item._id) {
+        setItem(itemToEdit.item._id);
+      }
+    } else {
+      setItem("");
+      setQty("");
+      setCost("");
+      setTax("");
+      setSalesPrice("");
+      setAvailableQty(0);
+      setRemainingQty(0);
+    }
+  }, [itemToEdit, items]);
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+
+  const handleSave = async () => {
     try {
-      console.log("Submitting item for CPO ID:", currentCpoId);
-      
       const formData = new FormData();
       formData.append("item", item);
       formData.append("qty", qty);
@@ -87,68 +109,83 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
       formData.append("tax", tax);
       formData.append("salesPrice", salesPrice);
       formData.append("customerPo", currentCpoId);
-      formData.append("allocatedQty", allocatedQty);
-      formData.append("availableQty", availableQty);
-      formData.append("remainingQty", remainingQty);
-
-      console.log("Sending FormData:", {
-        item,
-        qty,
-        cost,
-        tax,
-        salesPrice,
-        currentCpoId,
-      });
-      const { data } = await axios.post(
+  
+      const response = await axios.post(
         "http://localhost:8000/api/itempo",
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         }
-      );
-
-      console.log("Added Item Data:", data);
-
-      if (data?.error) {
-        toast.error(data.error);
-      } else {
-        toast.success("Item created successfully");
+      );  
+      if (response.status === 201) {
+        toast.success(response.data.message || "Sales Item added successfully!");
         refreshData();
-        onAddItem(data);
-        // Reset fields
-        setItem("");
-        setQty("");
-        setCost("");
-        setTax("");
-        setSalesPrice("");
+        closeAddForm();
+      } else {
+        toast.error(response.data.error || "Unexpected error occurred.");
       }
     } catch (err) {
-      console.error(
-        "Error adding item:",
-        err.response ? err.response.data : err
-      );
-      toast.error(
-        "Error adding item: " +
-          (err.response ? err.response.data.error : err.message)
-      );
+      console.error("Error:", err.message);
+      toast.error("ERROR: Failed to add item due to server error.");
+    }
+  };
+
+
+  const handleUpdate = async () => {
+    try {
+        const formData = new FormData();
+        formData.append("item", item);
+        formData.append("qty", qty);
+        formData.append("cost", cost);
+        formData.append("tax", tax);
+        formData.append("salesPrice", salesPrice);
+        formData.append("customerPo", itemToEdit.customerPo);
+
+        const response = await axios.put(
+            `http://localhost:8000/api/itempos/${itemToEdit._id}`,
+            formData,
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+
+        if (response.status === 200) {
+            toast.success(response.data.message || "Sales Item updated successfully!");
+            refreshData(); 
+            await loadCPO(currentPage); 
+            closeAddForm();
+        } else {
+            toast.error(response.data.error || "Unexpected error occurred.");
+        }
+    } catch (err) {
+        console.error("Error:", err.message);
+        toast.error("ERROR: Failed to update item due to server error.");
+    }
+};
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (itemToEdit) {
+      await handleUpdate(); 
+      refreshData();
+    } else {
+      await handleSave(); 
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="salesorder-form">
-      <h3 className="form-heading">Add SalesItem</h3>
+      <h3 className="form-heading">{itemToEdit ? "Edit" : "Add"} SalesItem</h3>
       <div className="customer-form">
         <label htmlFor="item" className="customer-form__label">
-          Item:
-          <select
-            id="item"
-            value={item}
-            onChange={handleItemChange}
-            className="customer-form__input"
-          >
-            <option value="">Select an item</option>
+            Item: 
+          <select 
+            id="item" 
+            value={item} onChange={handleItemChange} 
+            required 
+            disabled={!!itemToEdit}
+            className="customer-form__input">
+            <option value="">Select item</option>
             {items.map((item) => (
               <option key={item._id} value={item._id}>
                 {item.item}
@@ -157,8 +194,8 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
           </select>
         </label>
 
-        <label htmlFor="qty" className="customer-form__label">
-          Availble Qty:
+        <label htmlFor="availableQty" className="customer-form__label">
+          Available Qty:
         </label>
         <input
           type="number"
@@ -169,17 +206,20 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
         />
 
         <label htmlFor="avlqty" className="customer-form__label">
-          Allocated Qty:
+          <span>
+            Allocated Qty: <span className="required-field">*</span>
+          </span>
           <input
             type="number"
             id="avlqty"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             className="customer-form__input"
+            required
           />
         </label>
 
-        <label htmlFor="qty" className="customer-form__label">
+        <label htmlFor="remainingQty" className="customer-form__label">
           Remaining Qty:
         </label>
         <input
@@ -191,18 +231,23 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
         />
 
         <label htmlFor="cost" className="customer-form__label">
-          Unit Cost:
+          <span>
+            Unit Cost: <span className="required-field">*</span>
+          </span>
           <input
             type="text"
             id="cost"
             value={cost}
             onChange={(event) => setCost(event.target.value)}
             className="customer-form__input"
+            required
           />
         </label>
 
         <label htmlFor="tax" className="customer-form__label">
-          Tax :
+          <span>
+            Tax: <span className="required-field">*</span>
+          </span>
           <input
             type="text"
             id="tax"
@@ -211,6 +256,7 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
             className="customer-form__input"
             min="0"
             max="100"
+            required
           />
         </label>
         <label htmlFor="salesprice" className="customer-form__label">
@@ -219,27 +265,17 @@ const AddEditPo = ({ refreshData, onAddItem, currentCpoId }) => {
             type="text"
             id="salesprice"
             value={salesPrice}
-            onChange={(e) => setSalesPrice(e.target.value)}
             className="customer-form__input"
+            readOnly
           />
         </label>
       </div>
 
       <div className="ButtonContainer1">
         <button type="submit" className="StyledButton1">
-          Save
+          {itemToEdit ? "Update" : "Save"}
         </button>
-        <button
-          type="button"
-          className="StyledButton11"
-          onClick={() => {
-            setItem("");
-            setQty("");
-            setCost("");
-            setTax("");
-            setSalesPrice("");
-          }}
-        >
+        <button type="button" className="StyledButton11" onClick={closeAddForm}>
           Cancel
         </button>
       </div>

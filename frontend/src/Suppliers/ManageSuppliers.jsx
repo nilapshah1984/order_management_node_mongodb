@@ -3,10 +3,9 @@ import AddSuppliers from "./AddSuppliers";
 import { BiAddToQueue, BiSearch, BiSolidEdit } from "react-icons/bi";
 import { MdDelete } from "react-icons/md";
 import { Modal, Popconfirm, Tooltip, Pagination } from "antd";
-import axios from "axios";
+import { getSuppliers, deleteSupplier } from '../services/supplierApi'; // Import your supplier API functions
 import toast from "react-hot-toast";
 import "../StyleCSS/Customer.css";
-import AddItem from "../Item-Master/AddItem";
 
 function ManageSupplier() {
   const [suppliers, setSuppliers] = useState([]);
@@ -15,10 +14,8 @@ function ManageSupplier() {
   const [editingSuppliers, setEditingSuppliers] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [editingItem, setEditingItem] = useState(null); 
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-
 
   useEffect(() => {
     loadSuppliers(currentPage, sortField, sortOrder);
@@ -29,27 +26,15 @@ function ManageSupplier() {
   };
 
   const handleSearch = async () => {
-    setCurrentPage(1); 
-    await loadSuppliers(1); 
+    setCurrentPage(1);
+    await loadSuppliers(1);
   };
-
-  // const loadSuppliers = async (page) => {
-  //   try {
-  //     const { data } = await axios.get(
-  //       `http://localhost:8000/api/suppliers?search=${searchTerm}&page=${page}&limit=10`
-  //     );
-  //     setSuppliers(data.suppliers);
-  //     setTotalPages(data.totalPages);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
-
 
   const loadSuppliers = async (page, sortField = "", sortOrder = "") => {
     try {
-      const query = `http://localhost:8000/api/suppliers?search=${searchTerm}&page=${page}&limit=10&sortField=${sortField}&sortOrder=${sortOrder}&_=${new Date().getTime()}`;
-      const { data } = await axios.get(query);
+      const query = `http://localhost:8000
+/api/suppliers?search=${searchTerm}&page=${page}&limit=10&sortField=${sortField}&sortOrder=${sortOrder}&_=${new Date().getTime()}`;
+      const { data } = await getSuppliers(page, 10, sortField, sortOrder, searchTerm);
       setSuppliers(data.suppliers);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -57,12 +42,9 @@ function ManageSupplier() {
     }
   };
 
-
   const handleDelete = async (supplierId) => {
     try {
-      const { data } = await axios.delete(
-        `http://localhost:8000/api/suppliers/${supplierId}`
-      );
+      const { data } = await deleteSupplier(supplierId);
       if (data?.error) {
         toast.error(data.error);
       } else {
@@ -81,7 +63,7 @@ function ManageSupplier() {
 
   const onPageChange = (page) => {
     setCurrentPage(page);
-    loadSuppliers(page, sortField, sortOrder); 
+    loadSuppliers(page, sortField, sortOrder);
   };
 
   const handleSort = (field) => {
@@ -90,6 +72,12 @@ function ManageSupplier() {
     setSortOrder(order);
     loadSuppliers(currentPage, field, order);
   };
+
+  const handleClose = () => {
+    setVisible(false);
+    setEditingSuppliers(null); 
+  };
+
 
   return (
     <>
@@ -120,44 +108,43 @@ function ManageSupplier() {
         <div className="table-responsive">
           <h2 className="list-name">Supplier List:</h2>
           <table className="table table-bordered table-striped table-hover shadow">
-            <thead className="table-secondary">
-              {/* <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Area</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr> */}
-                            <tr>
+            <thead className="table-secondary TH-SIZE">
+              <tr>
                 <th onClick={() => handleSort("name")}>
                   Name
-                  <span>{sortField === "name" && (sortOrder === "asc" ? "↑" : "↓")}</span>
+                  <span>
+                    {sortField === "name" && (sortOrder === "asc" ? "↑" : "↓")}
+                  </span>
                 </th>
                 <th onClick={() => handleSort("email")}>
                   Email
-                  <span>{sortField === "email" && (sortOrder === "asc" ? "↑" : "↓")}</span>
+                  <span>
+                    {sortField === "email" && (sortOrder === "asc" ? "↑" : "↓")}
+                  </span>
                 </th>
-                <th onClick={() => handleSort("phone")}>
+                <th on Click={() => handleSort("phone")}>
                   Phone
-                  <span>{sortField === "phone" && (sortOrder === "asc" ? "↑" : "↓")}</span>
+                  <span>
+                    {sortField === "phone" && (sortOrder === "asc" ? "↑" : "↓")}
+                  </span>
                 </th>
                 <th onClick={() => handleSort("area")}>
                   Area
-                  <span>{sortField === "area" && (sortOrder === "asc" ? "↑" : "↓")}</span>
+                  <span>
+                    {sortField === "area" && (sortOrder === "asc" ? "↑" : "↓")}
+                  </span>
                 </th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
-
             </thead>
             <tbody>
               {suppliers.map((supplier) => (
-                <tr key={supplier._id}>
+                <tr key={supplier._id} className="TD-SIZE">
                   <td>{supplier.name}</td>
                   <td>{supplier.email}</td>
                   <td>{supplier.phone}</td>
-                  <td>{supplier.area}</td>
+                  <td>{supplier.area} - {supplier.city}</td>
                   <td>{supplier.status}</td>
                   <td>
                     <div className="button-group">
@@ -173,7 +160,7 @@ function ManageSupplier() {
                           className="btns1"
                           onClick={() => handleEditSupplier(supplier)}
                         >
-                          <BiSolidEdit />
+                          <BiSolidEdit className="icon-size"/>
                         </button>
                       </Tooltip>
 
@@ -190,9 +177,12 @@ function ManageSupplier() {
                           description="Are you sure to delete this supplier?"
                           onConfirm={() => handleDelete(supplier._id)}
                           okText="Delete"
+                          okButtonProps={{
+                            style: { backgroundColor: "red", color: "white", border: "none" },
+                          }}
                         >
                           <button className="btns2">
-                            <MdDelete />
+                            <MdDelete className="icon-size"/>
                           </button>
                         </Popconfirm>
                       </Tooltip>
@@ -205,7 +195,7 @@ function ManageSupplier() {
 
           <Pagination
             current={currentPage}
-            total={totalPages * 10} 
+            total={totalPages * 10}
             pageSize={10}
             onChange={onPageChange}
             showSizeChanger={false}
@@ -222,8 +212,9 @@ function ManageSupplier() {
             editingSuppliers={editingSuppliers}
             setVisible={setVisible}
             loadSuppliers={loadSuppliers}
+            setEditingSuppliers={setEditingSuppliers}
+            handleClose={handleClose}
           />
-
         </Modal>
       </div>
     </>

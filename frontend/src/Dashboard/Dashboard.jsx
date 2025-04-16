@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { useEffect, useState } from "react";
 import { BiSearch } from "react-icons/bi";
+import "../StyleCSS/Customer.css";
+import "../StyleCSS/SalesPurchase.css";
 
 function isDateString(dateString) {
   return !isNaN(Date.parse(dateString));
@@ -17,19 +19,22 @@ function getTodayDate() {
 function Dashboard() {
   const [cpo, setCpo] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [cpoList, setCpoList] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [filteredCPOs, setFilteredCPOs] = useState([]);
+  const [cpoList, setCpoList] = useState([]);
+  const [selectedCPO, setSelectedCPO] = useState("");
+  const [poList, setPoList] = useState([]);
   const [purchasePo, setPurchase] = useState([]);
-  
-  
-  // const cpoAmount = cpo.reduce((acc, item) => acc + item.qty * item.price, 0);
-  // const orderAmount = purchasePo.reduce((acc, sale) => acc + sale.qty * sale.price,0);
+  const [selectedPO, setSelectedPO] = useState("");
+  const [purchaseItems, setPurchaseItems] = useState([]);
+  const [totalPurchasePrice, setTotalPurchasePrice] = useState(0);
+  const [cpoTotalAmount, setCpoTotalAmount] = useState();
+  const [remainingItems, setRemainingItems] = useState([]);
 
   useEffect(() => {
     loadCustomers();
     loadCPOs();
-    loadPPO();
+    loadPOs();
+    resetDropdowns();
   }, []);
 
   const loadCustomers = async () => {
@@ -43,30 +48,150 @@ function Dashboard() {
 
   const loadCPOs = async () => {
     try {
-      const { data } = await axios.get("http://localhost:8000/api/customerpos");
-      setCpoList(data.customerpos || []);
+      let allCPOs = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      do {
+        const { data } = await axios.get(
+          `http://localhost:8000/api/customerpos?page=${currentPage}&limit=6`
+        );
+        allCPOs = [...allCPOs, ...data.customers];
+        totalPages = data.totalPages;
+        currentPage++;
+      } while (currentPage <= totalPages);
+      setCpoList(allCPOs);
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching CPOs:", err);
     }
   };
 
-  const loadPPO = async () => {
+  const loadPOs = async () => {
     try {
-      const { data } = await axios.get("https://localhost:8000/api/itemppos");
-      setPurchase(data);
+      const { data } = await axios.get("http://localhost:8000/api/purchases");
+      const uniquePOs = [
+        ...new Set(data.items.map((purchase) => purchase.purchase)),
+      ];
+      setPoList(
+        uniquePOs.map((po) => {
+          const poDetails = data.items.find((item) => item.purchase === po);
+          return {
+            value: po,
+            label: poDetails ? poDetails.purchase : `Purchase Order ${po}`,
+          };
+        })
+      );
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching POs:", err);
     }
   };
 
-  const handleCustomerChange = (e) => {
-    const selectedCustomerId = e.target.value;
-    setSelectedCustomer(selectedCustomerId);
+  const handleCustomerChange = (event) => {
+    const selectedCustomer = event.target.value;
+    setSelectedCustomer(selectedCustomer);
 
-    const filtered = cpoList.filter(
-      (cpo) => cpo.customern._id === selectedCustomerId      
+    const filteredCPOs = cpoList.filter(
+      (cpo) => cpo.customern._id === selectedCustomer
     );
-    setFilteredCPOs(filtered);
+    setCpoList(filteredCPOs);
+    setSelectedCPO("");
+    setPoList([]);
+  };
+
+  const handleCPOChange = async (event) => {
+    const selectedCPO = event.target.value;
+    setSelectedCPO(selectedCPO);
+
+    const selectedCPORecord = cpoList.find(
+      (cpo) => cpo.customerpo === selectedCPO
+    );
+
+    if (selectedCPORecord) {
+      setCpoTotalAmount(selectedCPORecord.cpoTotal);
+    } else {
+      console.log("CPO record not found for:", selectedCPO);
+    }
+
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/itempos");
+      const filteredItems = data.filter(
+        (item) => item.customerPo === selectedCPORecord?._id
+      );
+      setCpo(filteredItems);
+    } catch (error) {
+      console.error("Error fetching items for selected CPO:", error);
+    }
+
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/purchases");
+      const filteredPOs = data.items.filter(
+        (po) => po.customerpo === selectedCPO
+      );
+      setPoList(
+        filteredPOs.map((po) => ({
+          value: po.purchase,
+          label: po.purchase,
+        }))
+      );
+      setSelectedPO("");
+    } catch (error) {
+      console.error("Error fetching POs for selected CPO:", error);
+    }
+  };
+
+  const handlePOChange = async (event) => {
+    const selectedPO = event.target.value;
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/purchases");
+      const selectedPurchase = data.items.find(
+        (purchase) => purchase.purchase === selectedPO
+      );
+
+      if (selectedPurchase) {
+        const associatedID = selectedPurchase._id;
+        setSelectedPO(selectedPO);
+
+        const itemResponse = await axios.get(
+          `http://localhost:8000/api/itemppos?purchaseOrderId=${associatedID}`
+        );
+        const filteredItems = itemResponse.data.filter(
+          (item) => item.purchaseOrderId === associatedID
+        );
+
+        const itemIds = filteredItems.map((item) => item.item.item);
+
+        const itemDetailsResponse = await axios.get(
+          `http://localhost:8000/api/items`
+        );
+        const itemDetailsMap = {};
+        itemDetailsResponse.data.items.forEach((item) => {
+          itemDetailsMap[item._id] = item.item;
+        });
+
+        const purchaseItemsWithNames = filteredItems.map((item) => {
+          const itemId = item.item.item;
+          return {
+            ...item,
+            itemName: itemDetailsMap[itemId] || "Unknown Item",
+          };
+        });
+
+        setPurchaseItems(purchaseItemsWithNames);
+        calculateTotalPrice(purchaseItemsWithNames);
+        calculateRemainingItems(purchaseItemsWithNames);
+      } else {
+        console.log("No matching purchase found for selected PO.");
+      }
+    } catch (error) {
+      console.error("Error fetching items for selected PO:", error);
+    }
+  };
+
+  const calculateTotalPrice = (items) => {
+    const total = items.reduce(
+      (sum, item) => sum + item.altqty * item.unitCost,
+      0
+    );
+    setTotalPurchasePrice(total);
   };
 
   function handleDateChange(event) {
@@ -80,6 +205,45 @@ function Dashboard() {
 
   const todayDate = getTodayDate();
 
+  const resetDropdowns = () => {
+    setSelectedCustomer("");
+    setSelectedCPO("");
+    setSelectedPO("");
+    setCpo([]);
+    setPurchaseItems([]);
+    setTotalPurchasePrice(0);
+    setCpoTotalAmount(0);
+  };
+
+  const handleSearch = () => {
+    resetDropdowns();
+  };
+
+
+
+  const calculateRemainingItems = (purchaseItems) => {
+    const remaining = cpo.reduce((acc, item) => {
+
+      const purchaseItem = purchaseItems.find(p => p.itemName === item.item.item
+      );    
+      console.log("Purchase Item:", purchaseItem)  
+  
+      const remainingQty = purchaseItem ? item.qty - purchaseItem.altqty : item.qty;  
+      console.log("remaining qty;",remainingQty)  
+
+      if (remainingQty > 0) {
+        acc.push({
+          id: item.item.item, 
+          item: item.item.item,
+          remqty: remainingQty,
+          pprice: purchaseItem ? purchaseItem.unitCost : item.salesPrice 
+        });
+      }
+      return acc;
+    }, []);
+    setRemainingItems(remaining);
+  };
+
   return (
     <>
       <div className="main-container">
@@ -90,7 +254,7 @@ function Dashboard() {
               <select
                 id="customer"
                 value={selectedCustomer}
-                className="customer-salesorder_input scrollable-dropdown"
+                className="customer-salesorder_input22 scrollable-dropdown"
                 onChange={handleCustomerChange}
               >
                 <option value="" disabled>
@@ -102,7 +266,31 @@ function Dashboard() {
                   </option>
                 ))}
               </select>
-              <label htmlFor="orderDate" className="">
+              <select
+                id="cpo"
+                className="customer-salesorder_input22"
+                onChange={handleCPOChange}
+              >
+                <option value="">Select CPO</option>
+                {cpoList.map((cpo) => (
+                  <option key={cpo._id} value={cpo.customerpo}>
+                    {cpo.customerpo}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="PO"
+                className="customer-salesorder_input22"
+                onChange={handlePOChange}
+              >
+                <option value=""> Select PO </option>
+                {poList.map((po) => (
+                  <option key={po.value} value={po.value}>
+                    {po.label}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="orderDate" className="OrderDate">
                 Order Date:
               </label>
               <input
@@ -110,32 +298,21 @@ function Dashboard() {
                 id="orderDate"
                 onChange={handleDateChange}
                 max={todayDate}
-                className="label"
+                className="customer-salesorder_input22"
               />
-              To
+              <label htmlFor="orderDate" className="OrderDate">
+                To:
+              </label>
               <input
-                className="label"
+                className="customer-salesorder_input22"
                 type="date"
                 id="endDate"
                 onChange={handleDateChange}
                 max={todayDate}
               />
-              <select id="cpo" className="label" disabled={!selectedCustomer}>
-                <option>Select CPO</option>
-                {filteredCPOs.map((cpo) => (
-                <option key={cpo._id} value={cpo.customerpo}>
-                  {cpo.customerpo}
-                </option>
-              ))}
-              </select>
-              <select className="label">
-                <option>cpo order 1</option>
-                <option>cpo order 2</option>
-                <option>cpo order 3</option>
-              </select>
             </div>
 
-            <button className="StyledButton">
+            <button className="StyledButton" onClick={handleSearch}>
               <BiSearch className="SearchIcon" />
               Search
             </button>
@@ -145,7 +322,7 @@ function Dashboard() {
         <div>
           <div className="table-Dashboard">
             <div className="tableCPR">
-              <h2 className="list-name">Customer PO Details:</h2>
+              <h2 className="list-name">Customer PO Details: {selectedCPO}</h2>
               <table className="table table-bordered table-striped table-hover shadow">
                 <thead className="table-secondary">
                   <tr>
@@ -155,40 +332,25 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Item 1</td>
-                    <td> 6</td>
-                    <td> 14000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 2</td>
-                    <td> 7</td>
-                    <td> 6000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 3</td>
-                    <td> 10</td>
-                    <td> 28000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 4</td>
-                    <td> 10</td>
-                    <td> 10000</td>
-                  </tr>
                   {cpo?.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.item}</td>
-                      <td>{item.avlqty}</td>
-                      <td>{item.cost}</td>
+                      <td>{item.item?.item || ""}</td>
+                      <td>{item.qty}</td>
+                      <td>{item.salesPrice}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <h2>Order Amount: 506,000</h2>
+              <h2>
+                CPO Order Amount: ₹
+                {cpoTotalAmount ? cpoTotalAmount.toFixed(2) : ""}
+              </h2>
             </div>
             <div className="tableCPR">
-              <h2 className="list-name">Purchase Order</h2>
+              <h2 className="list-name">
+                Purchase Order Details: {selectedPO}
+              </h2>
               <table className="table table-bordered table-striped table-hover shadow">
                 <thead className="table-secondary">
                   <tr>
@@ -198,36 +360,16 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Item 1</td>
-                    <td> 5</td>
-                    <td> 12000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 2</td>
-                    <td> 2</td>
-                    <td> 5500</td>
-                  </tr>
-                  <tr>
-                    <td>Item 3</td>
-                    <td> 5</td>
-                    <td> 26000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 4</td>
-                    <td> 8</td>
-                    <td> 8500</td>
-                  </tr>
-                  {purchasePo.map((sale) => (
-                    <tr key={sale.id}>
-                      <td>{sale.item}</td>
-                      <td>{sale.avlqty}</td>
-                      <td>{sale.pprice}</td>
+                  {purchaseItems.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.itemName || "N/A"}</td>
+                      <td>{item.altqty}</td>
+                      <td>{(item.altqty * item.unitCost).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <h2>Item Cost : 269,000</h2>
+              <h2>Item Cost: ₹{totalPurchasePrice.toFixed(2)}</h2>
             </div>
             <div className="tableCPR">
               <h2 className="list-name">Remaining Purchase Order</h2>
@@ -240,41 +382,24 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Item 1</td>
-                    <td>1</td>
-                    <td>10000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 2</td>
-                    <td>5</td>
-                    <td>4000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 3</td>
-                    <td>5</td>
-                    <td>24000</td>
-                  </tr>
-                  <tr>
-                    <td>Item 4</td>
-                    <td>2</td>
-                    <td>8000</td>
-                  </tr>
-                  {purchasePo.map((rem) => (
+                  {remainingItems.map((rem) => (
                     <tr key={rem.id}>
                       <td>{rem.item}</td>
                       <td>{rem.remqty}</td>
-                      <td>{rem.pprice}</td>
+                      <td>{rem.pprice.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
-              <h2 className="list-name">Remaining cpo: </h2>
             </div>
           </div>
 
-          <h2>Profit/Loss: 237,000 </h2>
+          <h2>
+            Profit/Loss: ₹
+            {cpoTotalAmount && totalPurchasePrice
+              ? (cpoTotalAmount - totalPurchasePrice).toFixed(2)
+              : ""}
+          </h2>
         </div>
       </div>
     </>

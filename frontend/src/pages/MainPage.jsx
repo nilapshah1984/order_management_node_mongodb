@@ -3,6 +3,8 @@ import { NavLink } from "react-router-dom";
 import { FaTachometerAlt, FaUser, FaTruck, FaBoxes, FaFileInvoice, FaShoppingCart } from "react-icons/fa";
 
 
+
+
 function MainPage() {
   return (
     <ul className="nav-list">

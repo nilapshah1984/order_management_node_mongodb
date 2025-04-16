@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { BiSolidEdit } from "react-icons/bi";
 import { MdDelete } from "react-icons/md";
 import "../StyleCSS/Customer.css";
-import { Modal, Pagination } from "antd";
+import { Modal, Pagination, Popconfirm } from "antd";
 
 function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
   const [itemprice, setItemsprice] = useState([]);
@@ -22,13 +22,11 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
 
   const itemsPricePage = 5;
 
-
   useEffect(() => {
     if (selectedItem) {
       loadItemsprice(selectedItem, currentPage);
     }
   }, [selectedItem, currentPage]);
-
 
   const handleInputChange = (e) => {
     setFormData({
@@ -37,11 +35,11 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
     });
   };
 
-
   const loadItemsprice = async (selectedItem, pageNumber) => {
     try {
       const { data } = await axios.get(
-        `http://localhost:8000/api/itemprices?item=${selectedItem.item}&page=${pageNumber}&sortField=${sortField}&sortOrder=${sortOrder}`
+        `http://localhost:8000
+/api/itemprices?item=${selectedItem.item}&page=${pageNumber}&sortField=${sortField}&sortOrder=${sortOrder}`
       );
       setItemsprice(data.items || []);
       setTotalPages(data.totalPages);
@@ -51,7 +49,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -60,13 +57,13 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
         response = await axios.put(
           `http://localhost:8000/api/itemprices/${editprice._id}`,
           formData,
-          {headers: { "Content-Type": "multipart/form-data" }}
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
       } else {
         response = await axios.post(
           "http://localhost:8000/api/itemprice",
           { ...formData, item: selectedItem.item },
-          {headers: { "Content-Type": "multipart/form-data" }}
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
       }
       const { data } = response;
@@ -81,10 +78,13 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
         loadItemsprice(selectedItem);
         resetForm();
         setEditprice(null);
-        const totalQty = itemprice.reduce((total, price) => total + Number(price.qty), 0);
+        const totalQty = itemprice.reduce(
+          (total, price) => total + Number(price.qty),
+          0
+        );
         onUpdateStock(totalQty);
         await axios.put(`http://localhost:8000/api/items/${selectedItem._id}`, {
-          stock: totalQty, 
+          stock: totalQty,
         });
       }
     } catch (err) {
@@ -92,7 +92,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
       toast.error("Something went wrong.");
     }
   };
-
 
   const resetForm = () => {
     setFormData({
@@ -103,7 +102,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
     setEditprice(null);
   };
 
-
   const handleEdit = (itemprice) => {
     setEditprice(itemprice);
     setFormData({
@@ -112,7 +110,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
       date: itemprice.date ? itemprice.date.split("T")[0] : "",
     });
   };
-
 
   const handleDelete = async (id) => {
     try {
@@ -133,14 +130,15 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
     }
   };
 
-
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     loadItemsprice(selectedItem, pageNumber);
-    const totalQty = itemprice.reduce((total, price) => total + Number(price.qty), 0);
+    const totalQty = itemprice.reduce(
+      (total, price) => total + Number(price.qty),
+      0
+    );
     onUpdateStock(totalQty);
   };
-
 
   const sortItems = (column) => {
     const sortedData = [...itemprice];
@@ -154,7 +152,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
     setItemsprice(sortedData);
     setSortField(column);
   };
-
 
   return (
     <>
@@ -221,7 +218,7 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
             Item Prices for {selectedItem.item}:
           </h2>
           <table className="table table-bordered table-striped table-hover shadow">
-            <thead className="table-secondary">
+            <thead className="table-secondary TH-SIZE">
               <tr>
                 <th onClick={() => sortItems("price")}>
                   Price{" "}
@@ -248,7 +245,7 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
             </thead>
             <tbody>
               {itemprice?.map((price) => (
-                <tr key={price._id}>
+                <tr key={price._id} className="TD-SIZE">
                   <td>{price.price}</td>
                   <td>{price.qty}</td>
                   <td>{new Date(price.date).toLocaleDateString()}</td>
@@ -258,14 +255,25 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
                         className="btns1"
                         onClick={() => handleEdit(price)}
                       >
-                        <BiSolidEdit />
+                        <BiSolidEdit className="icon-size" />
                       </button>
-                      <button
+                      {/* <button
                         className="btns2"
                         onClick={() => handleDelete(price._id)}
                       >
-                        <MdDelete />
-                      </button>
+                        <MdDelete className="icon-size"/>
+                      </button> */}
+                      <Popconfirm
+                        placement="topLeft"
+                        title="Are you sure to delete this customer?"
+                        onConfirm={() => handleDelete(price._id)}
+                        okText="Delete"
+                        okButtonProps={{style: {backgroundColor: "red", color: "white", border: "none"}}}
+                      >
+                        <button className="btns2">
+                          <MdDelete className="icon-size" />
+                        </button>
+                      </Popconfirm>
                     </div>
                   </td>
                 </tr>
@@ -273,7 +281,6 @@ function ItemPrice({ setShowItem, item: selectedItem, onUpdateStock }) {
             </tbody>
           </table>
 
-          
           {itemprice.length > 0 &&
             itemprice.reduce((total, price) => total + Number(price.qty), 0) >
               0 && (

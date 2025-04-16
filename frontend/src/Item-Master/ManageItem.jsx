@@ -2,16 +2,10 @@ import React, { useEffect, useState } from "react";
 import AddItem from "./AddItem";
 import ItemStockUtilization from "./ItemStockUtilization";
 import ItemPrice from "./ItemPrice";
-import {
-  BiInfoCircle,
-  BiAddToQueue,
-  BiPackage,
-  BiSearch,
-  BiSolidEdit,
-} from "react-icons/bi";
+import {BiInfoCircle,BiAddToQueue,BiPackage,BiSearch,BiSolidEdit,} from "react-icons/bi";
 import Select from "react-select";
 import { MdDelete } from "react-icons/md";
-import { Modal, Pagination, Tooltip } from "antd";
+import { Modal, Pagination, Tooltip, Popconfirm } from "antd";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../StyleCSS/Customer.css";
@@ -32,9 +26,7 @@ function ManageItem() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [itemsPrice, setItemsPrice] = useState([]);
   const [totalStockQuantity, setTotalStockQuantity] = useState(0);
-  console.log("filteredItems",filteredItems)
 
-  // console.log(totalStockQuantity)
   const itemsPerPage = 10;
 
   const handleSearch = (selectedOption) => {
@@ -81,22 +73,19 @@ function ManageItem() {
     let allSuppliers = [];
     let currentPage = 1;
     let hasMore = true;
-
     while (hasMore) {
       const supplierResponse = await axios.get(
-        `http://localhost:8000/api/suppliers?page=${currentPage}&limit=10`
+        `http://localhost:8000
+/api/suppliers?page=${currentPage}&limit=10`
       );
       const suppliers = supplierResponse.data.suppliers;
-
       allSuppliers = [...allSuppliers, ...suppliers];
-
       if (suppliers.length < 10) {
         hasMore = false;
       } else {
         currentPage++;
       }
     }
-
     return allSuppliers;
   };
 
@@ -104,22 +93,19 @@ function ManageItem() {
     let allItems = [];
     let currentPage = 1;
     let hasMore = true;
-
     while (hasMore) {
       const itemResponse = await axios.get(
-        `http://localhost:8000/api/items?page=${currentPage}&limit=10`
+        `http://localhost:8000
+/api/items?page=${currentPage}&limit=10`
       );
       const items = itemResponse.data.items;
-
       allItems = [...allItems, ...items];
-
       if (items.length < 10) {
         hasMore = false;
       } else {
         currentPage++;
       }
     }
-
     return allItems;
   };
 
@@ -155,6 +141,7 @@ function ManageItem() {
       setFilteredItems(items);
     }
   };
+  
 
   const loadSupplier = async () => {
     try {
@@ -214,7 +201,6 @@ function ManageItem() {
       const { data } = await axios.delete(
         `http://localhost:8000/api/items/${itemId}`
       );
-      console.log(data);
       if (data?.error) {
         toast.error(data.error);
       } else {
@@ -230,17 +216,16 @@ function ManageItem() {
     setSelectedItem(item);
     setShowStock(true);
   };
+  
 
   const handleShowItemPrice = (item) => {
     setSelectedItem(item);
     setShowItem(true);
   };
-
   const sortItems = (field) => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
     setSortField(field);
     setSortOrder(order);
-
     const sortedItems = [...filteredItems].sort((a, b) => {
       if (a[field] < b[field]) return order === "asc" ? -1 : 1;
       if (a[field] > b[field]) return order === "asc" ? 1 : -1;
@@ -254,7 +239,7 @@ function ManageItem() {
     setTotalStockQuantity(newStockQuantity);
   };
 
-  console.log("item length",items.length)
+
 
   const saveStockToDatabase = async (itemsToSave) => {
     try {
@@ -275,14 +260,14 @@ function ManageItem() {
   };
   
 
+
   const loadItemstock = async (itemsToLoad) => {
     try {
       const itemStockRequests = itemsToLoad.map((item) =>
         axios.get(`http://localhost:8000/api/itemprices?item=${item.item}`)
       );       
       const responses = await Promise.all(itemStockRequests);
-      const stockMap = {};  
-  
+      const stockMap = {};    
       responses.forEach((response) => {
         const itemPrices = response.data.items;
         itemPrices.forEach((item) => {
@@ -305,8 +290,9 @@ function ManageItem() {
     }
   };
 
+
   useEffect(() => {
-    console.log("after update filteredIemss", filteredItems);
+    // console.log("after update filteredIemss", filteredItems);
   }, [filteredItems]);
   
 
@@ -355,73 +341,38 @@ function ManageItem() {
           </div>
         </div>
         <div>
-          <h2 className="list-name">Item List:</h2>
+          <h2 className="list-name">Item List Tabel:</h2>
           <div>
             <table className="table table-bordered table-striped table-hover shadow">
-              <thead className="table-secondary">
+              <thead className="table-secondary TH-SIZE">
                 <tr>
                   <th onClick={() => sortItems("item")}>
-                    Item Name{" "}
-                    {sortField === "item"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Item Name{" "}{sortField === "item"  ? sortOrder === "asc" ? "↑" : "↓" : "" }
                   </th>
                   <th onClick={() => sortItems("supplier.name")}>
-                    Supplier{" "}
-                    {sortField === "supplier.name"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Supplier{" "}{sortField === "supplier.name" ? sortOrder === "asc" ? "↑" : "↓" : ""}
                   </th>
                   <th onClick={() => sortItems("category")}>
-                    Category{" "}
-                    {sortField === "category"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Category{" "}{sortField === "category" ? sortOrder === "asc" ? "↑" : "↓": ""}
                   </th>
-                  <th onClick={() => sortItems("brand")}>
-                    Brand{" "}
-                    {sortField === "brand"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                  <th onClick={() => sortItems("brand")} className="">  
+                    Brand{" "}{sortField === "brand" ? sortOrder === "asc" ? "↑" : "↓" : ""}
                   </th>
                   <th onClick={() => sortItems("stock")}>
-                    Stock{" "}
-                    {sortField === "stock"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Stock{" "}{sortField === "stock"? sortOrder === "asc" ? "↑" : "↓" : ""}
                   </th>
                   <th onClick={() => sortItems("unit")}>
-                    Unit{" "}
-                    {sortField === "unit"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Unit{" "}{sortField === "unit" ? sortOrder === "asc" ? "↑" : "↓": ""}
                   </th>
                   <th onClick={() => sortItems("status")}>
-                    Status{" "}
-                    {sortField === "status"
-                      ? sortOrder === "asc"
-                        ? "↑"
-                        : "↓"
-                      : ""}
+                    Status{" "}{sortField === "status" ? sortOrder === "asc" ? "↑" : "↓" : ""}
                   </th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems?.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="TD-SIZE">
                     <td>{item.item}</td>
                     <td>{item.supplier?.name || "N/A"}</td>
                     <td>{item.category}</td>
@@ -436,7 +387,7 @@ function ManageItem() {
                             className="btns1"
                             onClick={() => handleEditItem(item)}
                           >
-                            <BiSolidEdit />
+                            <BiSolidEdit className="icon-size"/>
                           </button>
                         </Tooltip>
                         <Tooltip title="Stock">
@@ -444,7 +395,7 @@ function ManageItem() {
                             className="btns1"
                             onClick={() => handleShowItemPrice(item)}
                           >
-                            <BiPackage />
+                            <BiPackage className="icon-size"/>
                           </button>
                         </Tooltip>
                         <Tooltip title="View Utilization">
@@ -452,17 +403,22 @@ function ManageItem() {
                             className="btns1"
                             onClick={() => handleShowStock(item)}
                           >
-                            <BiInfoCircle />
+                            <BiInfoCircle className="icon-size"/>
                           </button>
                         </Tooltip>
-                        <Tooltip title="Delete">
-                          <button
-                            className="btns1"
-                            onClick={() => handleDelete(item._id)}
-                          >
-                            <MdDelete />
+                        <Popconfirm
+                          placement="topLeft"
+                          title="Are you sure to delete this customer?"
+                          onConfirm={() => handleDelete(item._id)}
+                          okText="Delete"
+                          okButtonProps={{
+                            style: { backgroundColor: "red", color: "white", border: "none" },
+                          }}
+                        >
+                          <button className="btns2">
+                            <MdDelete  className="icon-size"/>
                           </button>
-                        </Tooltip>
+                        </Popconfirm>
                       </div>
                     </td>
                   </tr>
@@ -480,9 +436,11 @@ function ManageItem() {
       </div>
       <Modal visible={visible} onCancel={() => setVisible(false)} footer={null} >
         <AddItem
-          item={editingItem}
+          // item={editingItem}
+          editingItem={editingItem}
           setVisible={setVisible}
           loadItems={loadItems}
+          setEditingItem={setEditingItem}
           items={items} 
           onClose={() => {
             setVisible(false);
@@ -494,7 +452,7 @@ function ManageItem() {
         visible={showStock}
         onCancel={() => setShowStock(false)}
         footer={null}
-        width={900}
+        width={1000}
       >
         <ItemStockUtilization
           item={selectedItem}
@@ -511,6 +469,7 @@ function ManageItem() {
           item={selectedItem} 
           onClose={() => setShowItem(false)} 
           onUpdateStock={onUpdateStock}
+          loadItems={loadItems}
         />
       </Modal>
     </>
@@ -518,3 +477,5 @@ function ManageItem() {
 }
 
 export default ManageItem;
+
+
